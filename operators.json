@@ -1,0 +1,66 @@
+{
+    "Conv2d W=56 H=7 R=3 S=3 C_in=32 C_out=32": {
+        "CPU (Xeon)": {
+            "cycle": 18267140,
+            "throughput": 2.08,
+            "latency": 9133000,
+            "power": 68.36,
+            "efficiency": 4
+        },
+        "GPU (RTX 2060S)": {
+            "cycle": 102774,
+            "throughput": 49.21,
+            "latency": 146820,
+            "power": 92.8,
+            "efficiency": 10.9
+        },
+        "CGRA": {
+            "cycle": 24984,
+            "throughput": 289.2,
+            "latency": 24984,
+            "power": 60,
+            "efficiency": 33.3,
+            "config_xml": "./resources/conv_fp32_0.xml"
+        }
+    },
+    "Conv2d W=112 H=112 R=3 S=3 C_in=128 C_out=128": {
+        "CPU (Xeon)": {
+            "throughput": 200,
+            "latency": 5,
+            "power": 30,
+            "efficiency": 6.7
+        },
+        "GPU (RTX 2060S)": {
+            "throughput": 1500,
+            "latency": 1.5,
+            "power": 120,
+            "efficiency": 12.5
+        },
+        "CGRA": {
+            "throughput": 2500,
+            "latency": 0.8,
+            "power": 70,
+            "efficiency": 35.7
+        }
+    },
+    "MatMul M=1024 K=512 N=1024": {
+        "CPU (Xeon)": {
+            "throughput": 500,
+            "latency": 20,
+            "power": 50,
+            "efficiency": 10
+        },
+        "GPU (RTX 2060S)": {
+            "throughput": 4000,
+            "latency": 5,
+            "power": 200,
+            "efficiency": 20
+        },
+        "CGRA": {
+            "throughput": 8000,
+            "latency": 2,
+            "power": 100,
+            "efficiency": 80
+        }
+    }
+}

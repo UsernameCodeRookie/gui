@@ -1,0 +1,174 @@
+Golden model executed successfully: Input Tensor shape (C,H,W): torch.Size([32, 7, 56])
+Weight Tensor shape (K,C,I,J): torch.Size([32, 32, 3, 3])
+Output Tensor shape (K,H_out,W_out): torch.Size([32, 7, 56])
+
+[Address ranges]
+Input   [10000 - 22543]
+Weight  [40000 - 49215]
+Output  [70000 - 82543]
+
+[Per-slice info (base 8 channels per slice)]
+Slice 0:
+  Output Channels [0 - 1]
+  Weight Start Address: 40000
+  Output Start Address: 70000
+Slice 1:
+  Output Channels [2 - 3]
+  Weight Start Address: 40576
+  Output Start Address: 70784
+Slice 2:
+  Output Channels [4 - 5]
+  Weight Start Address: 41152
+  Output Start Address: 71568
+Slice 3:
+  Output Channels [6 - 7]
+  Weight Start Address: 41728
+  Output Start Address: 72352
+Slice 4:
+  Output Channels [8 - 9]
+  Weight Start Address: 42304
+  Output Start Address: 73136
+Slice 5:
+  Output Channels [10 - 11]
+  Weight Start Address: 42880
+  Output Start Address: 73920
+Slice 6:
+  Output Channels [12 - 13]
+  Weight Start Address: 43456
+  Output Start Address: 74704
+Slice 7:
+  Output Channels [14 - 15]
+  Weight Start Address: 44032
+  Output Start Address: 75488
+Slice 8:
+  Output Channels [16 - 17]
+  Weight Start Address: 44608
+  Output Start Address: 76272
+Slice 9:
+  Output Channels [18 - 19]
+  Weight Start Address: 45184
+  Output Start Address: 77056
+Slice 10:
+  Output Channels [20 - 21]
+  Weight Start Address: 45760
+  Output Start Address: 77840
+Slice 11:
+  Output Channels [22 - 23]
+  Weight Start Address: 46336
+  Output Start Address: 78624
+Slice 12:
+  Output Channels [24 - 25]
+  Weight Start Address: 46912
+  Output Start Address: 79408
+Slice 13:
+  Output Channels [26 - 27]
+  Weight Start Address: 47488
+  Output Start Address: 80192
+Slice 14:
+  Output Channels [28 - 29]
+  Weight Start Address: 48064
+  Output Start Address: 80976
+Slice 15:
+  Output Channels [30 - 31]
+  Weight Start Address: 48640
+  Output Start Address: 81760
+
+Running command: ../../x64/Release/CGRA_rebuild conv_fp32_slice16 conv_fp32_slice16_memdata.txt
+
+Task dir is ../../resource/input/conv_fp32_slice16/
+Memory data file is ../../resource/input/conv_fp32_slice16_memdata.txt
+== Loading device model file '../../resource/input/DRAMSimini/DDR3_micron_16M_8B_x8_sg15.ini' == 
+== Loading system model file '../../resource/input/DRAMSimini/system.ini' == 
+===== MemorySystem 0 =====
+CH. 0 TOTAL_STORAGE : 16384MB | 16 Ranks | 4 Devices per rank
+TGC 0 TG conv_fp32_ task 0 use array slice0
+TGC 0 TG conv_fp32_ task 1 use array slice1
+TGC 0 TG conv_fp32_ task 2 use array slice2
+TGC 0 TG conv_fp32_ task 3 use array slice3
+TGC 0 TG conv_fp32_ task 4 use array slice4
+TGC 0 TG conv_fp32_ task 5 use array slice5
+TGC 0 TG conv_fp32_ task 6 use array slice6
+TGC 0 TG conv_fp32_ task 7 use array slice7
+TGC 0 TG conv_fp32_ task 8 use array slice8
+TGC 0 TG conv_fp32_ task 9 use array slice9
+TGC 0 TG conv_fp32_ task 10 use array slice10
+TGC 0 TG conv_fp32_ task 11 use array slice11
+TGC 0 TG conv_fp32_ task 12 use array slice12
+TGC 0 TG conv_fp32_ task 13 use array slice13
+TGC 0 TG conv_fp32_ task 14 use array slice14
+TGC 0 TG conv_fp32_ task 15 use array slice15
+DRAMSim2 Clock Frequency =500000000Hz, CPU Clock Frequency=1000000000Hz
+try to read xml file: ../../resource/input/conv_fp32_slice16/conv_fp32_0.xml
+
+
+2000           
+clk: 4000           
+clk: 6000           
+clk: 8000           
+clk: 10000          
+clk: 12000          
+clk: 14000          
+clk: 16000          
+clk: 18000          
+clk: 20000          
+clk: 22000          
+clk: 
+slice 6 finished at clk=23632
+
+slice 15 finished at clk=23808
+24000          
+clk: 
+slice 1 finished at clk=24154
+
+slice 10 finished at clk=24170
+
+slice 3 finished at clk=24459
+
+slice 12 finished at clk=24496
+
+slice 7 finished at clk=24536
+
+slice 2 finished at clk=24554
+
+slice 11 finished at clk=24656
+
+slice 14 finished at clk=24748
+
+slice 5 finished at clk=24775
+
+slice 9 finished at clk=24841
+
+slice 0 finished at clk=24852
+
+slice 4 finished at clk=24934
+
+slice 8 finished at clk=24978
+
+slice 13 finished at clk=24984
+all finished at clk=24984
+clk=24984
+Time taken: 76.36s
+clk / OPS / PE Number / GFLOPs / GFLOPs (peak)
+24852 / 906314 / 64 / 120.297 / 128
+24154 / 906322 / 64 / 120.298 / 128
+24554 / 906322 / 64 / 120.298 / 128
+24459 / 906332 / 64 / 120.299 / 128
+24934 / 906332 / 64 / 120.299 / 128
+24775 / 906332 / 64 / 120.299 / 128
+23632 / 906332 / 64 / 120.299 / 128
+24536 / 906304 / 64 / 120.295 / 128
+24978 / 906332 / 64 / 120.299 / 128
+24841 / 906304 / 64 / 120.295 / 128
+24170 / 906332 / 64 / 120.299 / 128
+24656 / 906332 / 64 / 120.299 / 128
+24496 / 906332 / 64 / 120.299 / 128
+24984 / 906332 / 64 / 120.299 / 128
+24748 / 906322 / 64 / 120.298 / 128
+23808 / 906337 / 64 / 120.3 / 128
+
+=== Summary ===
+Max Cycle     : 24984
+Total OPS     : 14501213
+Peak GFLOPs   : 2048
+Exec GFLOPs  : 1924.77
+Simulation completed successfully.

@@ -1,0 +1,38 @@
+{
+    "CPU": {
+        "name": "CPU (Xeon)",
+        "process": 22,
+        "clock_rate": 2000,
+        "cores": 4,
+        "ALU_per_core": 4,
+        "MUL_per_core": 1,
+        "FPU_per_core": 2,
+        "L1_size": 32768,
+        "L2_size": 1048576,
+        "L3_size": 16777216
+    },
+    "GPU": {
+        "name": "GPU (RTX 2060S)",
+        "process": 23,
+        "clock_rate": 700,
+        "cores": 34,
+        "ALU_per_core": 32,
+        "MUL_per_core": 4,
+        "FPU_per_core": 32,
+        "L1_size": 98304,
+        "L2_size": 1048576,
+        "L3_size": 1048576
+    },
+    "CGRA": {
+        "name": "CGRA",
+        "process": 28,
+        "clock_rate": 1000,
+        "cores": 16,
+        "ALU_per_core": 64,
+        "MUL_per_core": 64,
+        "FPU_per_core": 64,
+        "L1_size": 65536,
+        "L2_size": 2097152,
+        "L3_size": 8388608
+    }
+}
