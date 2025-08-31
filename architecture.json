@@ -8,20 +8,18 @@
         "MUL_per_core": 1,
         "FPU_per_core": 2,
         "L1_size": 32768,
-        "L2_size": 1048576,
-        "L3_size": 16777216
+        "L2_size": 1048576
     },
     "GPU": {
         "name": "GPU (RTX 2060S)",
-        "process": 23,
-        "clock_rate": 700,
+        "process": 12,
+        "clock_rate": 1905,
         "cores": 34,
-        "ALU_per_core": 32,
+        "ALU_per_core": 64,
         "MUL_per_core": 4,
-        "FPU_per_core": 32,
+        "FPU_per_core": 64,
         "L1_size": 98304,
-        "L2_size": 1048576,
-        "L3_size": 1048576
+        "L2_size": 2097152
     },
     "CGRA": {
         "name": "CGRA",
@@ -32,7 +30,6 @@
         "MUL_per_core": 64,
         "FPU_per_core": 64,
         "L1_size": 65536,
-        "L2_size": 2097152,
-        "L3_size": 8388608
+        "L2_size": 2097152
     }
 }

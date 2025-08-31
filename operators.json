@@ -1,4 +1,28 @@
 {
+    "GEMM M=64 N=64 K=64 ": {
+        "CPU (Xeon)": {
+            "cycle": 296202,
+            "throughput": 3.54,
+            "latency": 148101,
+            "power": 68.6,
+            "efficiency": 0.03
+        },
+        "GPU (RTX 2060S)": {
+            "cycle": 9671,
+            "throughput": 250.86,
+            "latency": 2090,
+            "power": 55.07,
+            "efficiency": 4.55
+        },
+        "CGRA": {
+            "cycle": 39627,
+            "throughput": 13.23,
+            "latency": 39627,
+            "power": 19.2,
+            "efficiency": 0.69,
+            "config_xml": "./resources/conv_fp32_0.xml"
+        }
+    },
     "Conv2d W=56 H=7 R=3 S=3 C_in=32 C_out=32": {
         "CPU (Xeon)": {
             "cycle": 18267140,
