@@ -1,14 +1,15 @@
 {
     "CPU": {
-        "name": "CPU (Xeon)",
+        "name": "CPU (E5 2660 V2)",
         "process": 22,
         "clock_rate": 2000,
-        "cores": 4,
+        "cores": 10,
         "ALU_per_core": 4,
         "MUL_per_core": 1,
         "FPU_per_core": 2,
         "L1_size": 32768,
-        "L2_size": 1048576
+        "L2_size": 1048576,
+        "area": 160
     },
     "GPU": {
         "name": "GPU (RTX 2060S)",
@@ -19,7 +20,8 @@
         "MUL_per_core": 4,
         "FPU_per_core": 64,
         "L1_size": 98304,
-        "L2_size": 2097152
+        "L2_size": 2097152,
+        "area": 445
     },
     "CGRA": {
         "name": "CGRA",
@@ -30,6 +32,7 @@
         "MUL_per_core": 64,
         "FPU_per_core": 64,
         "L1_size": 65536,
-        "L2_size": 2097152
+        "L2_size": 2097152,
+        "area": 51
     }
 }

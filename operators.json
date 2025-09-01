@@ -1,18 +1,20 @@
 {
     "GEMM M=64 N=64 K=64 ": {
-        "CPU (Xeon)": {
+        "CPU (E5 2660 V2)": {
             "cycle": 296202,
             "throughput": 3.54,
             "latency": 148101,
             "power": 68.6,
-            "efficiency": 0.03
+            "efficiency": 0.03,
+            "density": 22.13
         },
         "GPU (RTX 2060S)": {
             "cycle": 9671,
-            "throughput": 250.86,
-            "latency": 2090,
+            "throughput": 65.06,
+            "latency": 8059,
             "power": 55.07,
-            "efficiency": 4.55
+            "efficiency": 1.18,
+            "density": 146.20
         },
         "CGRA": {
             "cycle": 39627,
@@ -20,11 +22,12 @@
             "latency": 39627,
             "power": 19.2,
             "efficiency": 0.69,
-            "config_xml": "./resources/conv_fp32_0.xml"
+            "density": 259.41,
+            "config_xml": "./resources/gemm_fp32_0.xml"
         }
     },
     "Conv2d W=56 H=7 R=3 S=3 C_in=32 C_out=32": {
-        "CPU (Xeon)": {
+        "CPU (E5 2660 V2)": {
             "cycle": 18267140,
             "throughput": 2.08,
             "latency": 9133000,
@@ -68,7 +71,7 @@
         }
     },
     "MatMul M=1024 K=512 N=1024": {
-        "CPU (Xeon)": {
+        "CPU (E5 2660 V2)": {
             "throughput": 500,
             "latency": 20,
             "power": 50,
