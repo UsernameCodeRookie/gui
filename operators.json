@@ -6,7 +6,8 @@
             "latency": 148101,
             "power": 68.6,
             "efficiency": 0.03,
-            "density": 22.13
+            "density": 22.13,
+            "log_path": "./gemm/gem5/mcpat.log"
         },
         "GPU (RTX 2060S)": {
             "cycle": 9671,
@@ -14,7 +15,8 @@
             "latency": 8059,
             "power": 55.07,
             "efficiency": 1.18,
-            "density": 146.20
+            "density": 146.20,
+            "log_path": "./gemm/gpgpusim/accelwattch_power_report.log"
         },
         "CGRA": {
             "cycle": 39627,
