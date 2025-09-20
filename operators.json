@@ -1,31 +1,119 @@
 {
     "GEMM M=64 N=64 K=64 ": {
-        "CPU (E5 2660 V2)": {
-            "cycle": 296202,
-            "throughput": 3.54,
-            "latency": 148101,
-            "power": 68.6,
-            "efficiency": 0.03,
-            "density": 22.13,
+        "CPU (Xeon)": {
+            "cycle": 870673,
+            "throughput": 2.11,
+            "latency": 248764,
+            "power": 34.18,
+            "efficiency": 0.06,
+            "density": 52.75,
+            "tech_node": 22,
+            "freq": 3500,
+            "area": 40,
             "log_path": "./gemm/gem5/mcpat.log"
         },
         "GPU (RTX 2060S)": {
             "cycle": 9671,
-            "throughput": 65.06,
-            "latency": 8059,
+            "throughput": 39.90,
+            "latency": 13140,
             "power": 55.07,
-            "efficiency": 1.18,
-            "density": 146.20,
+            "efficiency": 0.72,
+            "density": 224.16,
+            "tech_node": 12,
+            "freq": 1470,
+            "area": 178,
             "log_path": "./gemm/gpgpusim/accelwattch_power_report.log"
+        },
+        "GPU (GV100)": {
+            "cycle": 9653,
+            "throughput": 30.76,
+            "latency": 17046,
+            "power": 61.66,
+            "efficiency": 0.50,
+            "density": 107.93,
+            "tech_node": 12,
+            "freq": 1132,
+            "area": 285
+        },
+        "GPU (TITANX)": {
+            "cycle": 9898,
+            "throughput": 37.57,
+            "latency": 13957,
+            "power": 53.25,
+            "efficiency": 0.71,
+            "density": 156.54,
+            "tech_node": 16,
+            "freq": 1417,
+            "area": 240
         },
         "CGRA": {
             "cycle": 39627,
             "throughput": 13.23,
             "latency": 39627,
-            "power": 19.2,
+            "power": 19.20,
             "efficiency": 0.69,
             "density": 259.41,
+            "tech_node": 28,
+            "freq": 1000,
+            "area": 51,
             "config_xml": "./resources/gemm_fp32_0.xml"
+        }
+    },
+    "FFT N=1024 x16": {
+        "CPU (Xeon)": {
+            "cycle": 2138995,
+            "throughput": 1.34,
+            "latency": 610270,
+            "power": 39.17,
+            "efficiency": 0.03,
+            "density": 33.50,
+            "tech_node": 22,
+            "freq": 3500,
+            "area": 40
+        },
+        "GPU (RTX 2060S)": {
+            "cycle": 13271,
+            "throughput": 90.73,
+            "latency": 9028,
+            "power": 74.89,
+            "efficiency": 1.21,
+            "density": 509.72,
+            "tech_node": 12,
+            "freq": 1470,
+            "area": 178
+        },
+        "GPU (GV100)": {
+            "cycle": 12918,
+            "throughput": 71.80,
+            "latency": 11410,
+            "power": 76.07,
+            "efficiency": 0.94,
+            "density": 251.93,
+            "tech_node": 12,
+            "freq": 1132,
+            "area": 285
+        },
+        "GPU (TITANX)": {
+            "cycle": 13237,
+            "throughput": 87.70,
+            "latency": 9340,
+            "power": 69.19,
+            "efficiency": 1.27,
+            "density": 365.42,
+            "tech_node": 16,
+            "freq": 1417,
+            "area": 240
+        },
+        "CGRA": {
+            "cycle": 8129,
+            "throughput": 100.80,
+            "latency": 8129,
+            "power": 19.20,
+            "efficiency": 5.25,
+            "density": 1976.47,
+            "tech_node": 28,
+            "freq": 1000,
+            "area": 51
         }
     },
     "Conv2d W=56 H=7 R=3 S=3 C_in=32 C_out=32": {
@@ -70,26 +158,6 @@
             "latency": 0.8,
             "power": 70,
             "efficiency": 35.7
-        }
-    },
-    "MatMul M=1024 K=512 N=1024": {
-        "CPU (E5 2660 V2)": {
-            "throughput": 500,
-            "latency": 20,
-            "power": 50,
-            "efficiency": 10
-        },
-        "GPU (RTX 2060S)": {
-            "throughput": 4000,
-            "latency": 5,
-            "power": 200,
-            "efficiency": 20
-        },
-        "CGRA": {
-            "throughput": 8000,
-            "latency": 2,
-            "power": 100,
-            "efficiency": 80
         }
     }
 }
