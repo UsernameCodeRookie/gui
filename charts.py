@@ -20,25 +20,58 @@ def update_bar_chart(bar_ax, bar_canvas, perf_data):
     x = np.arange(len(metrics_keys))  # Now x-axis represents metrics
     width = 0.8 / num_archs  # Adjust width based on number of architectures
 
+    # Find Xeon baseline values for normalization
+    xeon_baseline = None
+    for arch in archs:
+        if 'xeon' in arch.lower() or 'cpu' in arch.lower():
+            xeon_baseline = arch
+            break
+    
+    # If no Xeon found, use first architecture as baseline
+    if xeon_baseline is None:
+        xeon_baseline = archs[0]
+    
+    # Get baseline values
+    baseline_values = {}
+    for key in metrics_keys:
+        v = perf_data[xeon_baseline].get(key, 1)
+        val = float(v) if v else 1.0
+        if val <= 0: val = 1e-3
+        baseline_values[key] = val
+
     for idx, arch in enumerate(archs):
-        values = []
+        normalized_values = []
         for key in metrics_keys:
             v = perf_data[arch].get(key, 1)
             val = float(v) if v else 1.0
             if val <= 0: val = 1e-3
-            values.append(val)
+            
+            # Normalize relative to Xeon baseline
+            if key == 'latency':
+                # For latency, lower is better, so we invert the ratio
+                normalized_val = baseline_values[key] / val
+            else:
+                # For other metrics, higher is better
+                normalized_val = val / baseline_values[key]
+            
+            normalized_values.append(normalized_val)
+        
         # Position bars for each architecture within each metric group
-        bar_ax.bar(x + (idx - num_archs/2) * width + width/2, values, width, 
+        bar_ax.bar(x + (idx - num_archs/2) * width + width/2, normalized_values, width, 
                    label=arch, color=WARM_COLORS[idx % len(WARM_COLORS)], 
                    alpha=0.8, edgecolor='white', linewidth=1)
 
     bar_ax.set_xticks(x)
     bar_ax.set_xticklabels(metrics_labels, fontweight='bold', color='#2c3e50', rotation=15, ha='right')
-    bar_ax.set_ylabel("指标数值 (对数刻度)", fontweight='bold', color='#2c3e50')
+    bar_ax.set_ylabel(f"相对性能 (以{xeon_baseline}为基准)", fontweight='bold', color='#2c3e50')
     bar_ax.set_yscale("log")
+    
+    # Add horizontal line at y=1 to show baseline
+    bar_ax.axhline(y=1, color='red', linestyle='--', alpha=0.7, linewidth=1.5, label='基准线 (1.0x)')
+    
     bar_ax.legend(fontsize=8, frameon=True, fancybox=True, shadow=True, title='架构')
     bar_ax.grid(True, alpha=0.3, color='#bdc3c7')
-    bar_ax.set_title("性能对比 - 按指标分组", fontweight='bold', color='#e67e22', fontsize=14)
+    bar_ax.set_title(f"性能对比（归一化）", fontweight='bold', color='#e67e22', fontsize=14)
     bar_canvas.draw()
 
 
@@ -124,7 +157,7 @@ def update_radar_chart(radar_ax, radar_canvas, perf_data):
     # Improve legend positioning
     radar_ax.legend(fontsize=9, loc='upper right', bbox_to_anchor=(1.15, 1.0), 
                     frameon=True, fancybox=True, shadow=True, title='架构')
-    radar_ax.set_title("性能雷达图 (标准化)", fontweight='bold', color='#e67e22', 
+    radar_ax.set_title("性能雷达图 (归一化)", fontweight='bold', color='#e67e22', 
                        fontsize=14, pad=20)
     radar_canvas.draw()
 
