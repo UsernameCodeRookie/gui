@@ -50,26 +50,81 @@ def update_radar_chart(radar_ax, radar_canvas, perf_data):
     angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
     angles += angles[:1]
     
-    for idx, arch in enumerate(perf_data):
-        raw_vals = []
+    # Collect all raw values for normalization
+    all_raw_values = {key: [] for key in keys}
+    for arch in perf_data:
         for k in keys:
             v = perf_data[arch].get(k, 1)
             vv = float(v) if v else 1.0
             if vv <= 0: vv = 1e-3
-            raw_vals.append(vv)
-        values = [math.log10(v + 1) for v in raw_vals]
-        values += values[:1]
+            all_raw_values[k].append(vv)
+    
+    # Calculate normalization parameters for each metric
+    norm_params = {}
+    for k in keys:
+        values = all_raw_values[k]
+        min_val = min(values)
+        max_val = max(values)
+        
+        # Add some padding to avoid clustering
+        range_val = max_val - min_val
+        if range_val == 0:  # Handle case where all values are the same
+            norm_params[k] = {'min': min_val - 0.1, 'max': max_val + 0.1, 'range': 0.2}
+        else:
+            # Add 20% padding on both sides for better visualization
+            padding = range_val * 0.2
+            norm_params[k] = {
+                'min': min_val - padding,
+                'max': max_val + padding,
+                'range': range_val + 2 * padding
+            }
+    
+    # Special handling for latency (lower is better, so we need to invert)
+    latency_values = all_raw_values['latency']
+    if latency_values:
+        max_latency = max(latency_values)
+        # For latency, we'll use (max_latency + padding - current_value) for normalization
+        
+    for idx, arch in enumerate(perf_data):
+        normalized_vals = []
+        for i, k in enumerate(keys):
+            v = perf_data[arch].get(k, 1)
+            vv = float(v) if v else 1.0
+            if vv <= 0: vv = 1e-3
+            
+            # Normalize to 0-1 range with improved scaling
+            if k == 'latency':
+                # For latency, lower is better - invert the scale
+                max_latency_with_padding = norm_params[k]['max']
+                normalized_val = (max_latency_with_padding - vv) / norm_params[k]['range']
+            else:
+                # For other metrics, higher is better
+                normalized_val = (vv - norm_params[k]['min']) / norm_params[k]['range']
+            
+            # Scale to 0.1-1.0 range to avoid center clustering and ensure visibility
+            scaled_val = 0.1 + normalized_val * 0.9
+            normalized_vals.append(scaled_val)
+        
+        normalized_vals += normalized_vals[:1]  # Close the polygon
+        
         color = WARM_RADAR_COLORS[idx % len(WARM_RADAR_COLORS)]
-        radar_ax.plot(angles, values, label=arch, color=color, linewidth=2, alpha=0.8)
-        radar_ax.fill(angles, values, alpha=0.2, color=color)
+        radar_ax.plot(angles, normalized_vals, label=arch, color=color, linewidth=2.5, alpha=0.8)
+        radar_ax.fill(angles, normalized_vals, alpha=0.15, color=color)
 
+    # Set consistent radial limits
+    radar_ax.set_ylim(0, 1)
     radar_ax.set_xticks(angles[:-1])
-    radar_ax.set_xticklabels(metrics, color='#2c3e50', fontweight='bold')
-    radar_ax.set_ylabel("对数刻度", labelpad=20, color='#2c3e50', fontweight='bold')
-    radar_ax.legend(fontsize=8, loc='upper right', bbox_to_anchor=(1.2, 1.0), 
-                    frameon=True, fancybox=True, shadow=True)
+    radar_ax.set_xticklabels(metrics, color='#2c3e50', fontweight='bold', fontsize=9)
+    
+    # Add radial grid lines
+    radar_ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    radar_ax.set_yticklabels(['20%', '40%', '60%', '80%', '100%'], fontsize=8, alpha=0.7)
     radar_ax.grid(True, alpha=0.3, color='#bdc3c7')
-    radar_ax.set_title("性能雷达图", fontweight='bold', color='#e67e22', 
+    
+    # Improve legend positioning
+    radar_ax.legend(fontsize=9, loc='upper right', bbox_to_anchor=(1.15, 1.0), 
+                    frameon=True, fancybox=True, shadow=True, title='架构')
+    radar_ax.set_title("性能雷达图 (标准化)", fontweight='bold', color='#e67e22', 
                        fontsize=14, pad=20)
     radar_canvas.draw()
 
