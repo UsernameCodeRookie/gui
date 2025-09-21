@@ -31,9 +31,10 @@ from styles import APP_STYLESHEET, CHART_BACKGROUND_COLOR
 from charts import update_bar_chart, update_radar_chart, setup_chart_style
 from utils import slugify, format_bytes, format_number_with_commas, format_float_precision, cache_key
 
-# Configure matplotlib to support Chinese fonts
-matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans']
+# Configure matplotlib to support Chinese fonts and fix unicode issues
+matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans', 'Arial', 'sans-serif']
 matplotlib.rcParams['axes.unicode_minus'] = False
+matplotlib.rcParams['font.family'] = 'sans-serif'
 
 # SimulationRunner is expected to provide run(script_name, args, stdout_callback, stderr_callback, finished_callback)
 from runner import SimulationRunner

@@ -15,36 +15,37 @@ def update_bar_chart(bar_ax, bar_canvas, perf_data):
     bar_ax.clear()
     archs = list(perf_data.keys())
     metrics_keys = ["throughput", "latency", "power", "efficiency", "density"]
-    metrics_labels = ["吞吐量 (GOPS)", "延迟 (ns)", "功耗 (W)", "能效 (GOPS/W)", "有效算力密度 (MOPS/mm²)"]
-    num_metrics = len(metrics_keys)
-    x = np.arange(len(archs))
-    width = 0.15
+    metrics_labels = ["吞吐量 (GOPS)", "延迟 (ns)", "功耗 (W)", "能效 (GOPS/W)", "有效算力密度 (MOPS/mm$^2$)"]
+    num_archs = len(archs)
+    x = np.arange(len(metrics_keys))  # Now x-axis represents metrics
+    width = 0.8 / num_archs  # Adjust width based on number of architectures
 
-    for idx, key in enumerate(metrics_keys):
+    for idx, arch in enumerate(archs):
         values = []
-        for a in archs:
-            v = perf_data[a].get(key, 1)
+        for key in metrics_keys:
+            v = perf_data[arch].get(key, 1)
             val = float(v) if v else 1.0
             if val <= 0: val = 1e-3
             values.append(val)
-        bar_ax.bar(x + (idx - num_metrics/2) * width + width/2, values, width, 
-                   label=metrics_labels[idx], color=WARM_COLORS[idx % len(WARM_COLORS)], 
+        # Position bars for each architecture within each metric group
+        bar_ax.bar(x + (idx - num_archs/2) * width + width/2, values, width, 
+                   label=arch, color=WARM_COLORS[idx % len(WARM_COLORS)], 
                    alpha=0.8, edgecolor='white', linewidth=1)
 
     bar_ax.set_xticks(x)
-    bar_ax.set_xticklabels(archs, fontweight='bold', color='#2c3e50')
+    bar_ax.set_xticklabels(metrics_labels, fontweight='bold', color='#2c3e50', rotation=15, ha='right')
     bar_ax.set_ylabel("指标数值 (对数刻度)", fontweight='bold', color='#2c3e50')
     bar_ax.set_yscale("log")
-    bar_ax.legend(fontsize=8, frameon=True, fancybox=True, shadow=True)
+    bar_ax.legend(fontsize=8, frameon=True, fancybox=True, shadow=True, title='架构')
     bar_ax.grid(True, alpha=0.3, color='#bdc3c7')
-    bar_ax.set_title("性能对比", fontweight='bold', color='#e67e22', fontsize=14)
+    bar_ax.set_title("性能对比 - 按指标分组", fontweight='bold', color='#e67e22', fontsize=14)
     bar_canvas.draw()
 
 
 def update_radar_chart(radar_ax, radar_canvas, perf_data):
     """Update the radar chart with performance data."""
     radar_ax.clear()
-    metrics = ["吞吐量 (GOPS)", "延迟 (ns)", "功耗 (W)", "能效 (GOPS/W)", "有效算力密度 (MOPS/mm²)"]
+    metrics = ["吞吐量 (GOPS)", "延迟 (ns)", "功耗 (W)", "能效 (GOPS/W)", "有效算力密度 (MOPS/mm$^2$)"]
     keys = ["throughput", "latency", "power", "efficiency", "density"]
     angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
     angles += angles[:1]
