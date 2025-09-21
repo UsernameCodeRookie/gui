@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-PerfSimGUI
+PerfSimGUI - Modularized Version
 - Left panel: operator selector + operator XML + static architecture table (parameters, two rows)
 - Right panel: simulation results (tabs)
     - Performance Table tab: performance table (top) + simulation log (bottom, with architecture selector)
@@ -11,8 +11,6 @@ PerfSimGUI
 import sys
 import json
 import os
-import re
-import math
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout,
@@ -20,13 +18,18 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLabel, QHeaderView,
     QComboBox, QGroupBox, QSplitter
 )
-from PyQt6.QtCore import Qt, QRegularExpression
-from PyQt6.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QPalette
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib
-import numpy as np
+
+# Import our custom modules
+from xml_highlighter import XmlSyntaxHighlighter
+from styles import APP_STYLESHEET, CHART_BACKGROUND_COLOR
+from charts import update_bar_chart, update_radar_chart, setup_chart_style
+from utils import slugify, format_bytes, format_number_with_commas, format_float_precision, cache_key
 
 # Configure matplotlib to support Chinese fonts
 matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans']
@@ -35,99 +38,6 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 # SimulationRunner is expected to provide run(script_name, args, stdout_callback, stderr_callback, finished_callback)
 from runner import SimulationRunner
 
-# -------------------------------
-# XML Syntax Highlighter
-# -------------------------------
-class XmlSyntaxHighlighter(QSyntaxHighlighter):
-    """XML Syntax Highlighter for CGRA operator configuration files."""
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.highlighting_rules = []
-        
-        # XML tag format - warm orange-brown color
-        xml_tag_format = QTextCharFormat()
-        xml_tag_format.setForeground(QColor(184, 107, 56))  # Warm orange-brown
-        xml_tag_format.setFontWeight(QFont.Weight.Bold)
-        
-        # XML attribute name format - warm deep orange color
-        xml_attr_name_format = QTextCharFormat()
-        xml_attr_name_format.setForeground(QColor(204, 120, 50))  # Warm deep orange
-        xml_attr_name_format.setFontWeight(QFont.Weight.Bold)
-        
-        # XML attribute value format - warm golden yellow color
-        xml_attr_value_format = QTextCharFormat()
-        xml_attr_value_format.setForeground(QColor(181, 137, 0))  # Warm golden yellow
-        
-        # XML comment format - warm beige color
-        xml_comment_format = QTextCharFormat()
-        xml_comment_format.setForeground(QColor(158, 134, 120))  # Warm beige
-        xml_comment_format.setFontItalic(True)
-        
-        # XML keyword format (for special XML declarations) - warm red-brown color
-        xml_keyword_format = QTextCharFormat()
-        xml_keyword_format.setForeground(QColor(166, 89, 78))  # Warm red-brown
-        xml_keyword_format.setFontWeight(QFont.Weight.Bold)
-        
-        # Define highlighting rules
-        # XML tags: <tag> and </tag>
-        self.highlighting_rules.append((
-            QRegularExpression(r'</?[!]?[A-Za-z]+[^>]*>'),
-            xml_tag_format
-        ))
-        
-        # XML attribute names: attribute=
-        self.highlighting_rules.append((
-            QRegularExpression(r'\b[A-Za-z_][A-Za-z0-9_]*(?=\s*=)'),
-            xml_attr_name_format
-        ))
-        
-        # XML attribute values: "value" or 'value'
-        self.highlighting_rules.append((
-            QRegularExpression(r'"[^"]*"'),
-            xml_attr_value_format
-        ))
-        self.highlighting_rules.append((
-            QRegularExpression(r"'[^']*'"),
-            xml_attr_value_format
-        ))
-        
-        # XML comments: <!-- comment -->
-        self.highlighting_rules.append((
-            QRegularExpression(r'<!--.*-->'),
-            xml_comment_format
-        ))
-        
-        # XML processing instructions: <?xml ... ?>
-        self.highlighting_rules.append((
-            QRegularExpression(r'<\?.*\?>'),
-            xml_keyword_format
-        ))
-        
-        # XML CDATA sections: <![CDATA[ ... ]]>
-        self.highlighting_rules.append((
-            QRegularExpression(r'<!\[CDATA\[.*\]\]>'),
-            xml_keyword_format
-        ))
-    
-    def highlightBlock(self, text):
-        """Apply syntax highlighting to the given text block."""
-        # Apply each highlighting rule
-        for pattern, format_obj in self.highlighting_rules:
-            expression = pattern
-            match_iterator = expression.globalMatch(text)
-            while match_iterator.hasNext():
-                match = match_iterator.next()
-                self.setFormat(match.capturedStart(), match.capturedLength(), format_obj)
-
-# -------------------------------
-# Utility: slugify operator name
-# -------------------------------
-def slugify(op_name: str) -> str:
-    s = op_name.lower()
-    s = re.sub(r'[^a-z0-9]+', '_', s)
-    s = s.strip('_')
-    return s
 
 # -------------------------------
 # Load JSON configuration files
@@ -146,165 +56,8 @@ class PerfSimGUI(QMainWindow):
         self.setWindowTitle("架构性能对比")
         self.setGeometry(200, 100, 1400, 800)
         
-        # Set modern application style
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f5f5f5;
-                color: #333333;
-            }
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #cccccc;
-                border-radius: 8px;
-                margin-top: 1ex;
-                padding-top: 10px;
-                background-color: #ffffff;
-                color: #2c3e50;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-                color: #e67e22;
-                font-size: 14px;
-            }
-            QPushButton {
-                background-color: #e67e22;
-                border: none;
-                color: white;
-                padding: 10px 20px;
-                text-align: center;
-                font-size: 14px;
-                font-weight: bold;
-                border-radius: 6px;
-                min-width: 100px;
-            }
-            QPushButton:hover {
-                background-color: #d35400;
-            }
-            QPushButton:pressed {
-                background-color: #a0522d;
-            }
-            QComboBox {
-                border: 2px solid #bdc3c7;
-                border-radius: 4px;
-                padding: 6px;
-                background-color: white;
-                color: #2c3e50;
-                font-size: 12px;
-            }
-            QComboBox:hover {
-                border-color: #e67e22;
-            }
-            QComboBox::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 20px;
-                border-left: 2px solid #bdc3c7;
-                background-color: #ecf0f1;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 6px solid #7f8c8d;
-            }
-            QComboBox QAbstractItemView {
-                border: 2px solid #e67e22;
-                border-radius: 4px;
-                background-color: #fefefe;
-                color: #2c3e50;
-                selection-background-color: #e67e22;
-                selection-color: white;
-                outline: none;
-            }
-            QComboBox QAbstractItemView::item {
-                background-color: #fefefe;
-                color: #2c3e50;
-                padding: 8px;
-                border: none;
-                min-height: 20px;
-            }
-            QComboBox QAbstractItemView::item:selected {
-                background-color: #e67e22;
-                color: white;
-            }
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #f39c12;
-                color: white;
-            }
-            QTableWidget {
-                gridline-color: #bdc3c7;
-                background-color: white;
-                alternate-background-color: #f8f9fa;
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-                color: #2c3e50;
-            }
-            QTableWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #ecf0f1;
-                color: #2c3e50;
-            }
-            QTableWidget::item:selected {
-                background-color: #e67e22;
-                color: white;
-            }
-            QHeaderView::section {
-                background-color: #34495e;
-                color: white;
-                padding: 8px;
-                border: none;
-                font-weight: bold;
-            }
-            QTextEdit {
-                border: 2px solid #bdc3c7;
-                border-radius: 4px;
-                background-color: #fefefe;
-                color: #2c3e50;
-                font-family: 'Courier New', monospace;
-            }
-            QTextEdit:focus {
-                border-color: #e67e22;
-            }
-            QTabWidget::pane {
-                border: 2px solid #bdc3c7;
-                border-radius: 4px;
-                background-color: white;
-            }
-            QTabBar::tab {
-                background-color: #ecf0f1;
-                color: #2c3e50;
-                padding: 10px 25px;
-                margin-right: 2px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-                font-weight: bold;
-                min-width: 100px;
-            }
-            QTabBar::tab:selected {
-                background-color: #e67e22;
-                color: white;
-            }
-            QTabBar::tab:hover {
-                background-color: #d35400;
-                color: white;
-            }
-            QLabel {
-                color: #2c3e50;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QSplitter::handle {
-                background-color: #bdc3c7;
-            }
-            QSplitter::handle:horizontal {
-                width: 3px;
-            }
-            QSplitter::handle:vertical {
-                height: 3px;
-            }
-        """)
+        # Apply modular stylesheet
+        self.setStyleSheet(APP_STYLESHEET)
 
         # Cache for logs keyed by "<operator>::<arch>"
         # value: string containing entire log (we append lines)
@@ -416,25 +169,13 @@ class PerfSimGUI(QMainWindow):
     # -------------------------------
     # Populate architecture tables
     # -------------------------------
-    def format_bytes(self, bytes_val):
-        """Format bytes values to human readable format (KB, MB, etc.)"""
-        if not isinstance(bytes_val, (int, float)) or bytes_val == 0:
-            return "-"
-        
-        if bytes_val >= 1024*1024:
-            return f"{bytes_val/(1024*1024):.1f} MB"
-        elif bytes_val >= 1024:
-            return f"{bytes_val/1024:.0f} KB"
-        else:
-            return f"{bytes_val} B"
-    
     def populate_arch_tables(self):
         """Fill static architecture parameter tables from ARCH_DATA."""
         for i, arch in enumerate(ARCH_DATA.keys()):
             params = ARCH_DATA[arch]
             self.arch_table_top.setItem(i, 0, QTableWidgetItem(params.get("name", arch)))
             
-            # Format numerical values properly
+            # Format numerical values properly using utility functions
             process_val = params.get("process", "-")
             clock_rate_val = params.get("clock_rate", "-")
             area_val = params.get("area", "-")
@@ -445,13 +186,13 @@ class PerfSimGUI(QMainWindow):
             l2_val = params.get("L2_size", "-")
             
             self.arch_table_top.setItem(i, 1, QTableWidgetItem(f"{process_val}" if process_val != "-" else "-"))
-            self.arch_table_top.setItem(i, 2, QTableWidgetItem(f"{clock_rate_val:,}" if isinstance(clock_rate_val, (int, float)) else str(clock_rate_val)))
+            self.arch_table_top.setItem(i, 2, QTableWidgetItem(format_number_with_commas(clock_rate_val) if isinstance(clock_rate_val, (int, float)) else str(clock_rate_val)))
             self.arch_table_top.setItem(i, 3, QTableWidgetItem(f"{area_val}" if area_val != "-" else "-"))
             self.arch_table_bottom.setItem(i, 0, QTableWidgetItem(f"{cores_val}" if cores_val != "-" else "-"))
             self.arch_table_bottom.setItem(i, 1, QTableWidgetItem(f"{alu_val}" if alu_val != "-" else "-"))
             self.arch_table_bottom.setItem(i, 2, QTableWidgetItem(f"{fpu_val}" if fpu_val != "-" else "-"))
-            self.arch_table_bottom.setItem(i, 3, QTableWidgetItem(self.format_bytes(l1_val)))
-            self.arch_table_bottom.setItem(i, 4, QTableWidgetItem(self.format_bytes(l2_val)))
+            self.arch_table_bottom.setItem(i, 3, QTableWidgetItem(format_bytes(l1_val)))
+            self.arch_table_bottom.setItem(i, 4, QTableWidgetItem(format_bytes(l2_val)))
             
             # Center align architecture table content (except first column)
             for col in range(1, 4):
@@ -505,13 +246,6 @@ class PerfSimGUI(QMainWindow):
             self.update_log_view(self.arch_combo.currentText())
 
     # -------------------------------
-    # Helper: cache key for operator+arch
-    # -------------------------------
-    def _cache_key(self, operator: str, arch: str) -> str:
-        """Unique cache key combining operator and architecture."""
-        return f"{operator}::{arch}"
-
-    # -------------------------------
     # Helper: append a line to log cache
     # -------------------------------
     def _append_to_log_cache(self, key: str, line: str):
@@ -536,7 +270,7 @@ class PerfSimGUI(QMainWindow):
         if not selected_op or arch_name not in OP_DATA[selected_op]:
             return
 
-        key = self._cache_key(selected_op, arch_name)
+        key = cache_key(selected_op, arch_name)
 
         # If cached, display cache immediately
         if key in self.log_cache:
@@ -628,8 +362,7 @@ class PerfSimGUI(QMainWindow):
         layout = QVBoxLayout(widget)
         self.bar_fig, self.bar_ax = plt.subplots()
         # Set warm color scheme for matplotlib
-        self.bar_fig.patch.set_facecolor('#fefefe')
-        self.bar_ax.set_facecolor('#fefefe')
+        setup_chart_style(self.bar_fig, self.bar_ax)
         self.bar_canvas = FigureCanvas(self.bar_fig)
         layout.addWidget(self.bar_canvas)
         return widget
@@ -642,9 +375,9 @@ class PerfSimGUI(QMainWindow):
         layout = QVBoxLayout(widget)
         self.radar_fig = plt.figure()
         # Set warm color scheme for matplotlib
-        self.radar_fig.patch.set_facecolor('#fefefe')
+        self.radar_fig.patch.set_facecolor(CHART_BACKGROUND_COLOR)
         self.radar_ax = self.radar_fig.add_subplot(111, polar=True)
-        self.radar_ax.set_facecolor('#fefefe')
+        self.radar_ax.set_facecolor(CHART_BACKGROUND_COLOR)
         self.radar_canvas = FigureCanvas(self.radar_fig)
         layout.addWidget(self.radar_canvas)
         return widget
@@ -704,7 +437,7 @@ class PerfSimGUI(QMainWindow):
             metrics = perf_data[arch]
             self.perf_table.setItem(i, 0, QTableWidgetItem(arch))
             
-            # Format numerical values properly
+            # Format numerical values properly using utility functions
             cycle_val = metrics.get("cycle", 0)
             throughput_val = metrics.get("throughput", 0)
             latency_val = metrics.get("latency", 0)
@@ -713,81 +446,21 @@ class PerfSimGUI(QMainWindow):
             density_val = metrics.get("density", 0)
             
             # Convert to proper formatted strings
-            self.perf_table.setItem(i, 1, QTableWidgetItem(f"{cycle_val:,}" if isinstance(cycle_val, (int, float)) and cycle_val != 0 else "-"))
-            self.perf_table.setItem(i, 2, QTableWidgetItem(f"{throughput_val:.2f}" if isinstance(throughput_val, (int, float)) and throughput_val != 0 else "-"))
-            self.perf_table.setItem(i, 3, QTableWidgetItem(f"{latency_val:,}" if isinstance(latency_val, (int, float)) and latency_val != 0 else "-"))
-            self.perf_table.setItem(i, 4, QTableWidgetItem(f"{power_val:.2f}" if isinstance(power_val, (int, float)) and power_val != 0 else "-"))
-            self.perf_table.setItem(i, 5, QTableWidgetItem(f"{efficiency_val:.2f}" if isinstance(efficiency_val, (int, float)) and efficiency_val != 0 else "-"))
-            self.perf_table.setItem(i, 6, QTableWidgetItem(f"{density_val:.2f}" if isinstance(density_val, (int, float)) and density_val != 0 else "-"))
+            self.perf_table.setItem(i, 1, QTableWidgetItem(format_number_with_commas(cycle_val)))
+            self.perf_table.setItem(i, 2, QTableWidgetItem(format_float_precision(throughput_val)))
+            self.perf_table.setItem(i, 3, QTableWidgetItem(format_number_with_commas(latency_val)))
+            self.perf_table.setItem(i, 4, QTableWidgetItem(format_float_precision(power_val)))
+            self.perf_table.setItem(i, 5, QTableWidgetItem(format_float_precision(efficiency_val)))
+            self.perf_table.setItem(i, 6, QTableWidgetItem(format_float_precision(density_val)))
             
             # Center align performance table content 
             for col in range(1, 7):
                 if self.perf_table.item(i, col):
                     self.perf_table.item(i, col).setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.bar_ax.clear()
-        archs = list(perf_data.keys())
-        metrics_keys = ["throughput", "latency", "power", "efficiency", "density"]
-        metrics_labels = ["吞吐量 (GOPS)", "延迟 (ns)", "功耗 (W)", "能效 (GOPS/W)", "有效算力密度 (MOPS/mm²)"]
-        num_metrics = len(metrics_keys)
-        x = np.arange(len(archs))
-        width = 0.15
-
-        # Warm color palette for bars
-        warm_colors = ['#e67e22', '#d35400', '#f39c12', '#e74c3c', '#c0392b']
-
-        for idx, key in enumerate(metrics_keys):
-            values = []
-            for a in archs:
-                v = perf_data[a].get(key, 1)
-                val = float(v) if v else 1.0
-                if val <= 0: val = 1e-3
-                values.append(val)
-            self.bar_ax.bar(x + (idx - num_metrics/2) * width + width/2, values, width, 
-                           label=metrics_labels[idx], color=warm_colors[idx % len(warm_colors)], 
-                           alpha=0.8, edgecolor='white', linewidth=1)
-
-        self.bar_ax.set_xticks(x)
-        self.bar_ax.set_xticklabels(archs, fontweight='bold', color='#2c3e50')
-        self.bar_ax.set_ylabel("指标数值 (对数刻度)", fontweight='bold', color='#2c3e50')
-        self.bar_ax.set_yscale("log")
-        self.bar_ax.legend(fontsize=8, frameon=True, fancybox=True, shadow=True)
-        self.bar_ax.grid(True, alpha=0.3, color='#bdc3c7')
-        self.bar_ax.set_title("性能对比", fontweight='bold', color='#e67e22', fontsize=14)
-        self.bar_canvas.draw()
-
-        # Update radar chart with warm colors
-        self.radar_ax.clear()
-        metrics = ["吞吐量 (GOPS)", "延迟 (ns)", "功耗 (W)", "能效 (GOPS/W)", "有效算力密度 (MOPS/mm²)"]
-        keys = ["throughput", "latency", "power", "efficiency", "density"]
-        angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
-        angles += angles[:1]
-
-        # Warm color palette for radar chart
-        warm_radar_colors = ['#e67e22', '#d35400', '#f39c12', '#e74c3c', '#c0392b']
-        
-        for idx, arch in enumerate(perf_data):
-            raw_vals = []
-            for k in keys:
-                v = perf_data[arch].get(k, 1)
-                vv = float(v) if v else 1.0
-                if vv <= 0: vv = 1e-3
-                raw_vals.append(vv)
-            values = [math.log10(v + 1) for v in raw_vals]
-            values += values[:1]
-            color = warm_radar_colors[idx % len(warm_radar_colors)]
-            self.radar_ax.plot(angles, values, label=arch, color=color, linewidth=2, alpha=0.8)
-            self.radar_ax.fill(angles, values, alpha=0.2, color=color)
-
-        self.radar_ax.set_xticks(angles[:-1])
-        self.radar_ax.set_xticklabels(metrics, color='#2c3e50', fontweight='bold')
-        self.radar_ax.set_ylabel("对数刻度", labelpad=20, color='#2c3e50', fontweight='bold')
-        self.radar_ax.legend(fontsize=8, loc='upper right', bbox_to_anchor=(1.2, 1.0), 
-                            frameon=True, fancybox=True, shadow=True)
-        self.radar_ax.grid(True, alpha=0.3, color='#bdc3c7')
-        self.radar_ax.set_title("性能雷达图", fontweight='bold', color='#e67e22', 
-                               fontsize=14, pad=20)
-        self.radar_canvas.draw()
+        # Update charts using modular functions
+        update_bar_chart(self.bar_ax, self.bar_canvas, perf_data)
+        update_radar_chart(self.radar_ax, self.radar_canvas, perf_data)
 
         # log and run simulation
         self.perf_log.append(f"正在运行仿真: {selected_op} (架构: {selected_arch})\n")
@@ -796,7 +469,7 @@ class PerfSimGUI(QMainWindow):
         if selected_arch == "CGRA":
             # Start CGRA simulation via SimulationRunner.
             # Callbacks will append lines to cache and update UI only when current selection matches.
-            key = self._cache_key(selected_op, selected_arch)
+            key = cache_key(selected_op, selected_arch)
 
             # mark runner as running
             self.running_runners.add(key)
@@ -804,8 +477,6 @@ class PerfSimGUI(QMainWindow):
             # ensure cache entry exists so UI shows incremental logs
             if key not in self.log_cache:
                 self.log_cache[key] = ""
-                
-        
 
             self.sim_runner = SimulationRunner(script_dir="../CGRA_rebuild")
             config_xml_path = metrics.get("config_xml", "")
@@ -814,7 +485,7 @@ class PerfSimGUI(QMainWindow):
 
             # define callbacks that append to cache and update UI only if still selected
             def stdout_callback(line: str, _op=selected_op, _arch=selected_arch):
-                k = self._cache_key(_op, _arch)
+                k = cache_key(_op, _arch)
                 # append to cache
                 self._append_to_log_cache(k, line)
                 # update UI only if user currently views this operator+arch
@@ -827,7 +498,7 @@ class PerfSimGUI(QMainWindow):
             def stderr_callback(line: str, _op=selected_op, _arch=selected_arch):
                 # treat stderr similarly (prefix with [ERR])
                 out_line = f"[ERR] {line}"
-                k = self._cache_key(_op, _arch)
+                k = cache_key(_op, _arch)
                 self._append_to_log_cache(k, out_line)
                 if self.operator_combo.currentText() == _op and self.arch_combo.currentText() == _arch:
                     self.perf_log.clear()
@@ -835,7 +506,7 @@ class PerfSimGUI(QMainWindow):
                     self.perf_log.verticalScrollBar().setValue(self.perf_log.verticalScrollBar().maximum())
 
             def finished_callback(_op=selected_op, _arch=selected_arch):
-                k = self._cache_key(_op, _arch)
+                k = cache_key(_op, _arch)
                 self._append_to_log_cache(k, "[Finished]")
                 # remove running marker
                 try:
@@ -859,7 +530,7 @@ class PerfSimGUI(QMainWindow):
         else:
             # Non-CGRA: logs are handled immediately in update_log_view when arch selection changes.
             # Here we simply ensure the log for the selected arch is loaded into cache and UI.
-            key = self._cache_key(selected_op, selected_arch)
+            key = cache_key(selected_op, selected_arch)
             metrics = perf_data[selected_arch]
             log_path = metrics.get("log_path", "")
             if log_path and os.path.isfile(log_path):
