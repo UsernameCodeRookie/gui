@@ -35,8 +35,8 @@ from utils import slugify, format_bytes, format_number_with_commas, format_float
 matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
-# SimulationRunner is expected to provide run(script_name, args, stdout_callback, stderr_callback, finished_callback)
-from runner import SimulationRunner
+# Use CGRAValidationThread for running CGRA validation in background
+from thread import CGRAValidationThread
 
 
 # -------------------------------
@@ -65,6 +65,9 @@ class PerfSimGUI(QMainWindow):
 
         # Track running runners by key to avoid duplicate UI updates
         self.running_runners = set()
+        
+        # Track active validation threads
+        self.validation_threads = {}
 
         main_widget = QWidget()
         main_layout = QHBoxLayout(main_widget)
@@ -254,6 +257,24 @@ class PerfSimGUI(QMainWindow):
             self.log_cache[key] += line + "\n"
         else:
             self.log_cache[key] = line + "\n"
+    
+    def _get_task_name_from_operator(self, operator_name: str) -> str:
+        """
+        Map operator name to task name for CGRA validation.
+        Extracts the operator type from names like "GEMM M=64 N=64 K=64" -> "gemm_fp32_slice16"
+        """
+        # Extract the base operator type (first word before space or the whole name)
+        base_op = operator_name.split()[0] if ' ' in operator_name else operator_name
+        
+        # Mapping from operator type to task directory name
+        task_mapping = {
+            "Conv2d": "conv_fp32_slice16",
+            "GEMM": "gemm_fp32_slice16",
+            "FFT": "fft_slice16",
+            # Add more mappings as needed
+        }
+        
+        return task_mapping.get(base_op, base_op.lower() + "_fp32_slice16")
 
     # -------------------------------
     # Update log view immediately when selecting architecture
@@ -467,7 +488,7 @@ class PerfSimGUI(QMainWindow):
         metrics = perf_data[selected_arch]
 
         if selected_arch == "CGRA":
-            # Start CGRA simulation via SimulationRunner.
+            # Start CGRA simulation via CGRAValidationThread.
             # Callbacks will append lines to cache and update UI only when current selection matches.
             key = cache_key(selected_op, selected_arch)
 
@@ -478,11 +499,19 @@ class PerfSimGUI(QMainWindow):
             if key not in self.log_cache:
                 self.log_cache[key] = ""
 
-            self.sim_runner = SimulationRunner(script_dir="../CGRA_rebuild")
+            # Extract task name from config_xml path or use operator name
             config_xml_path = metrics.get("config_xml", "")
-            script_name = "validation.py"
-            args = [config_xml_path] if config_xml_path else []
-
+            # Assume task name is derived from operator (e.g., "Conv2d" -> "conv_fp32_slice16")
+            # You may need to adjust this mapping based on your actual task names
+            task_name = self._get_task_name_from_operator(selected_op)
+            
+            # Create validation thread
+            thread = CGRAValidationThread(
+                task=task_name,
+                input_dir="./resource/input",
+                output_dir="./resource/output"
+            )
+            
             # define callbacks that append to cache and update UI only if still selected
             def stdout_callback(line: str, _op=selected_op, _arch=selected_arch):
                 k = cache_key(_op, _arch)
@@ -505,12 +534,15 @@ class PerfSimGUI(QMainWindow):
                     self.perf_log.append(self.log_cache[k])
                     self.perf_log.verticalScrollBar().setValue(self.perf_log.verticalScrollBar().maximum())
 
-            def finished_callback(_op=selected_op, _arch=selected_arch):
+            def finished_callback(success: bool, _op=selected_op, _arch=selected_arch):
                 k = cache_key(_op, _arch)
-                self._append_to_log_cache(k, "[Finished]")
+                result_msg = "[Validation Passed]" if success else "[Validation Failed]"
+                self._append_to_log_cache(k, result_msg)
                 # remove running marker
                 try:
                     self.running_runners.remove(k)
+                    if k in self.validation_threads:
+                        del self.validation_threads[k]
                 except KeyError:
                     pass
                 # update UI only if user still views this operator+arch
@@ -519,14 +551,14 @@ class PerfSimGUI(QMainWindow):
                     self.perf_log.append(self.log_cache[k])
                     self.perf_log.verticalScrollBar().setValue(self.perf_log.verticalScrollBar().maximum())
 
-            # start the runner
-            self.sim_runner.run(
-                script_name,
-                args=args,
-                stdout_callback=stdout_callback,
-                stderr_callback=stderr_callback,
-                finished_callback=finished_callback
-            )
+            # Connect signals
+            thread.stdout_signal.connect(stdout_callback)
+            thread.stderr_signal.connect(stderr_callback)
+            thread.finished_signal.connect(finished_callback)
+            
+            # Store thread reference and start
+            self.validation_threads[key] = thread
+            thread.start()
         else:
             # Non-CGRA: logs are handled immediately in update_log_view when arch selection changes.
             # Here we simply ensure the log for the selected arch is loaded into cache and UI.
@@ -562,6 +594,12 @@ class PerfSimGUI(QMainWindow):
         # Clear caches and running markers
         self.log_cache.clear()
         self.running_runners.clear()
+        # Stop and clear any running validation threads
+        for thread in self.validation_threads.values():
+            if thread.isRunning():
+                thread.stop()
+                thread.wait(1000)  # Wait up to 1 second for thread to finish
+        self.validation_threads.clear()
 
 
 if __name__ == "__main__":

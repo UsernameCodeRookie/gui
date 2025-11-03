@@ -44,7 +44,7 @@ class SimulationRunner:
         self.process.finished.connect(self.handle_finished)
 
         # Start the process
-        self.process.start("python3", [script_name] + args)
+        self.process.start("python", [script_name] + args)
 
     def handle_stdout(self):
         if self.process:

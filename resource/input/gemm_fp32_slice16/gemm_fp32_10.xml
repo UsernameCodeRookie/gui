@@ -1,0 +1,1178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Config manual_placement="true">
+    <config_option function="true" parameter="true"/>
+    <domain2_partition times="1" physical_space="[8, 8]"/>
+
+<node type="paraset" >
+       <para name="{M}" default="64"/>
+       <para name="{K}" default="64"/>
+       <para name="{N}" default="64"/>
+       <para name="{q_spm}" default="8"/>
+       <para name="{k_spm}" default="8"/>
+       <para name="{s_spm}" default="8"/>
+
+</node>
+
+        <!-- M -->
+<node type="pe" index="0" domain="0" opcode="lt" is_float="false" loop_control="loop" branch_control="null" self_loop="true" key_cal="false">
+    <inner_connection
+    buffer0_constant="true" buffer1_constant="true" buffer2_constant="true"
+    buffer0_from="null" buffer1_from="null" buffer2_from="null"
+    pick_initial="false" />
+    <input type="null"/>
+    <input type="null"/>
+    <input type="null"/>
+    <inbuffer value0="8" value1="0" value2="{M}"/>
+    <outbuffer value="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- N -->
+<node type="pe" index="1" domain="0" opcode="lt" is_float="false" loop_control="loop" branch_control="null" self_loop="true" key_cal="false">
+    <inner_connection
+    buffer0_constant="true" buffer1_constant="true" buffer2_constant="true"
+    buffer0_from="null" buffer1_from="in1" buffer2_from="null"
+    pick_initial="false" />
+    <input type="null"/>
+    <input type="pe" index="0" port="0"/>
+    <input type="null"/>
+    <inbuffer value0="8" value1="0" value2="{N}"/>
+    <outbuffer value="1"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- dynamic_N -->
+<node type="pe" index="69" domain="0" opcode="lt" is_float="false" loop_control="loop" branch_control="null" self_loop="true" key_cal="false">
+    <inner_connection
+    buffer0_constant="true" buffer1_constant="true" buffer2_constant="true"
+    buffer0_from="null" buffer1_from="in1" buffer2_from="null"
+    pick_initial="false" />
+    <input type="null"/>
+    <input type="pe" index="0" port="0"/>
+    <input type="null"/>
+    <inbuffer value0="1" value1="0" value2="{N}"/>
+    <outbuffer value="1"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- M -->
+<node type="fifo" index="2" domain="0" size="5" >
+    <input type="pe" index="0" port="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- M -->
+<node type="fifo" index="1" domain="0" size="5" >
+    <input type="pe" index="0" port="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- K -->
+<node type="pe" index="2" domain="0" opcode="lt" is_float="false" loop_control="loop" branch_control="null" self_loop="true" key_cal="false">
+    <inner_connection
+    buffer0_constant="true" buffer1_constant="true" buffer2_constant="true"
+    buffer0_from="null" buffer1_from="in1" buffer2_from="null"
+    pick_initial="false" />
+    <input type="null"/>
+    <input type="pe" index="1" port="0"/>
+    <input type="null"/>
+    <inbuffer value0="1" value1="0" value2="{K}"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- N -->
+<node type="fifo" index="4" domain="0" size="5" >
+    <input type="pe" index="1" port="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- keep_0 -->
+<node type="pe" index="70" domain="0" opcode="smul" is_float="false" loop_control="null" branch_control="null" self_loop="false" key_cal="false"  >
+    <inner_connection
+    buffer0_constant="true" buffer1_constant="false" buffer2_constant="false"
+    buffer0_from="null" buffer1_from="in1" buffer2_from="null"
+    pick_initial="false"/>
+    <input type="null"/>
+    <input type="pe" index="1" port="0"/>
+    <input type="null"/>
+    <inbuffer value0="0" value1="null" value2="null"/>
+    <outbuffer value="null"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- dynamic_N -->
+<node type="fifo" index="3" domain="0" size="5" >
+    <input type="pe" index="69" port="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- M -->
+<node type="fifo" index="5" domain="0" size="5" >
+    <input type="fifo" index="2" port="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- M_transin -->
+<node type="pe" index="3" domain="0" opcode="nop" is_float="false" loop_control="transin" branch_control="null" self_loop="false" key_cal="false"  >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="true" buffer2_constant="false"
+    buffer0_from="null" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="null"/>
+    <input type="fifo" index="1" port="0"/>
+    <input type="pe" index="1" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="1"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- K_Matrix -->
+<node type="ag" index="1" domain="1" ag_mode="s2p" opcode="joint" buffer0_constant="true" buffer1_constant="false" buffer2_constant="true">
+    <input type="null"/>
+    <input type="pe" index="2" port="0"/>
+    <input type="fifo" index="4" port="0"/>
+    <inbuffer value0="0" value1="null" value2="null"/>
+    <priority value="1"/>
+    <direction value="col"/>
+    <stride value="1"/>
+    <times value="8" index="8_9_10_11_12_13_14_15"/>
+    <branch in0="null" in1="null" in2="null"/>
+    <placement cord="[0, 0]"/>
+</node>
+
+<node type="rdfifo" index="8" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="9" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="10" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="11" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="12" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="13" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="14" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="15" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<!-- invalid_value -->
+<node type="ag" index="3" domain="1" ag_mode="s2p" opcode="joint" buffer0_constant="true" buffer1_constant="true" buffer2_constant="false">
+    <input type="null"/>
+    <input type="null"/>
+    <input type="pe" index="70" port="0"/>
+    <inbuffer value0="0" value1="0" value2="null"/>
+    <priority value="0"/>
+    <direction value="row"/>
+    <stride value="1"/>
+    <times value="1" index="16"/>
+    <branch in0="null" in1="null" in2="null"/>
+    <placement cord="[0, 0]"/>
+</node>
+
+<node type="rdfifo" index="16" catalogue="a" access_inner="false" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<!-- dynamic_N -->
+<node type="fifo" index="6" domain="0" size="5" >
+    <input type="fifo" index="3" port="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- Q_Matrix -->
+<node type="ag" index="0" domain="1" ag_mode="s2p" opcode="joint" buffer0_constant="true" buffer1_constant="true" buffer2_constant="false">
+    <input type="null"/>
+    <input type="pe" index="3" port="0"/>
+    <input type="pe" index="2" port="0"/>
+    <inbuffer value0="0" value1="null" value2="null"/>
+    <priority value="0"/>
+    <direction value="row"/>
+    <stride value="1"/>
+    <times value="8" index="0_1_2_3_4_5_6_7"/>
+    <branch in0="null" in1="null" in2="null"/>
+    <placement cord="[0, 0]"/>
+</node>
+
+<node type="rdfifo" index="0" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="1" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="2" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="3" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="4" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="5" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="6" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<node type="rdfifo" index="7" catalogue="a" access_inner="true" dynamic_num="1" domain="2" size="2">
+        <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 1 -->
+<node type="pe" index="5" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 2, 1 -->
+<node type="pe" index="13" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="21" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="29" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="37" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="45" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="53" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="61" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="0" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 2 -->
+<node type="pe" index="6" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 2, 2 -->
+<node type="pe" index="14" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="22" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="30" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="38" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="46" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="54" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="62" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="1" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 3 -->
+<node type="pe" index="7" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 2, 3 -->
+<node type="pe" index="15" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="23" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="31" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="39" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="47" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="55" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="63" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="2" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1,  4 -->
+<node type="pe" index="8" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 2, 4 -->
+<node type="pe" index="16" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="24" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="32" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="40" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="48" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="56" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="64" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="3" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 5 -->
+<node type="pe" index="9" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="17" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="25" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="33" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="41" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="49" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="57" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="65" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="4" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 6 -->
+<node type="pe" index="10" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="18" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="26" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="34" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="42" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="50" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="58" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="66" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="5" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 7 -->
+<node type="pe" index="11" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="19" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="27" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="35" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="43" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="51" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="59" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="67" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="6" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 1, 8 -->
+<node type="pe" index="12" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="8" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="20" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="9" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="28" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="10" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="36" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="11" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="44" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="12" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="52" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="13" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="60" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="14" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+<!-- 11 -->
+<node type="pe" index="68" domain="2" opcode="smac" is_float="true" loop_control="transout" branch_control="null" self_loop="true" key_cal="true" partition_times="1st" >
+    <inner_connection
+    buffer0_constant="false" buffer1_constant="false" buffer2_constant="true"
+    buffer0_from="in0" buffer1_from="in1" buffer2_from="in2"
+    pick_initial="false"/>
+    <input type="rdfifo" index="7" port="0"/>
+    <input type="rdfifo" index="15" port="0"/>
+    <input type="rdfifo" index="16" port="0"/>
+    <inbuffer value0="null" value1="null" value2="null"/>
+    <outbuffer value="2"/>
+    <placement cord="[0, 0]"/>
+</node>
+
+<node type="wrfifo" index="0"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="5" port="0"/>
+    <input type="pe" index="13" port="0"/>
+    <input type="pe" index="21" port="0"/>
+    <input type="pe" index="29" port="0"/>
+    <input type="pe" index="37" port="0"/>
+    <input type="pe" index="45" port="0"/>
+    <input type="pe" index="53" port="0"/>
+    <input type="pe" index="61" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="1"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="6" port="0"/>
+    <input type="pe" index="14" port="0"/>
+    <input type="pe" index="22" port="0"/>
+    <input type="pe" index="30" port="0"/>
+    <input type="pe" index="38" port="0"/>
+    <input type="pe" index="46" port="0"/>
+    <input type="pe" index="54" port="0"/>
+    <input type="pe" index="62" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="2"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="7" port="0"/>
+    <input type="pe" index="15" port="0"/>
+    <input type="pe" index="23" port="0"/>
+    <input type="pe" index="31" port="0"/>
+    <input type="pe" index="39" port="0"/>
+    <input type="pe" index="47" port="0"/>
+    <input type="pe" index="55" port="0"/>
+    <input type="pe" index="63" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="3"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="8" port="0"/>
+    <input type="pe" index="16" port="0"/>
+    <input type="pe" index="24" port="0"/>
+    <input type="pe" index="32" port="0"/>
+    <input type="pe" index="40" port="0"/>
+    <input type="pe" index="48" port="0"/>
+    <input type="pe" index="56" port="0"/>
+    <input type="pe" index="64" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="4"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="9" port="0"/>
+    <input type="pe" index="17" port="0"/>
+    <input type="pe" index="25" port="0"/>
+    <input type="pe" index="33" port="0"/>
+    <input type="pe" index="41" port="0"/>
+    <input type="pe" index="49" port="0"/>
+    <input type="pe" index="57" port="0"/>
+    <input type="pe" index="65" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="5"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="10" port="0"/>
+    <input type="pe" index="18" port="0"/>
+    <input type="pe" index="26" port="0"/>
+    <input type="pe" index="34" port="0"/>
+    <input type="pe" index="42" port="0"/>
+    <input type="pe" index="50" port="0"/>
+    <input type="pe" index="58" port="0"/>
+    <input type="pe" index="66" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="6"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="11" port="0"/>
+    <input type="pe" index="19" port="0"/>
+    <input type="pe" index="27" port="0"/>
+    <input type="pe" index="35" port="0"/>
+    <input type="pe" index="43" port="0"/>
+    <input type="pe" index="51" port="0"/>
+    <input type="pe" index="59" port="0"/>
+    <input type="pe" index="67" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="wrfifo" index="7"  opcode="nop" access_inner="false" dequant="false" quant="false" dynamic_num="1" domain="2" size="2">
+    <input type="pe" index="12" port="0"/>
+    <input type="pe" index="20" port="0"/>
+    <input type="pe" index="28" port="0"/>
+    <input type="pe" index="36" port="0"/>
+    <input type="pe" index="44" port="0"/>
+    <input type="pe" index="52" port="0"/>
+    <input type="pe" index="60" port="0"/>
+    <input type="pe" index="68" port="0"/>
+    <quant_para scale0="1.0" bias0="0" scale1="1.0" bias1="0"/>
+    <placement cord="[0, 0]"/>
+</node>
+<node type="ag" index="2" domain="1" ag_mode="p2s" opcode="joint" buffer0_constant="true" buffer1_constant="true" buffer2_constant="false">
+    <input type="null"/>
+    <input type="fifo" index="5" port="0"/>
+    <input type="fifo" index="6" port="0"/>
+    <inbuffer value0="0" value1="null" value2="null"/>
+    <priority value="0"/>
+    <direction value="row"/>
+    <stride value="1"/>
+    <times value="8" index="0_1_2_3_4_5_6_7"/>
+    <branch in0="null" in1="null" in2="null"/>
+    <placement cord="[0, 0]"/>
+</node>
+
+<node type="lsu" index="0">
+     <prefetch  ddr_base_addr="106496"  local_base_addr="0" prefetch_times="{M}*{K}"  prefetch_stride="0" prefetch_cnt="1" is_spm="true" stream_index="0"/>
+     <prefetch  ddr_base_addr="131072"  local_base_addr="0" prefetch_times="{K}*{N}"  prefetch_stride="0" prefetch_cnt="1" is_spm="true" stream_index="1"/>
+     <writeback  ddr_base_addr="40960"  local_base_addr="0" write_times="{M}*{N}"  write_stride="0" write_cnt="1" is_spm="true" stream_index="2"/>
+     <prefetch  ddr_base_addr="135168"  local_base_addr="0" prefetch_times="64"  prefetch_stride="0" prefetch_cnt="1" is_spm="true" stream_index="3"/>
+     <placement cord="[0, 0]"/>
+</node>
+
+<node type="scratchpad" index="0">
+     <stream stream_index="0" mode="rd" pattern="5"  local_row="0" local_col="{q_spm}+0" multi="{M}"   stride="{K}"  N="{k_spm}" />
+     <stream stream_index="1" mode="rd" pattern="5"  local_row="0" local_col="0+0" multi="{K}"   stride="{N}"  N="{q_spm}" />
+     <stream stream_index="2" mode="wr" pattern="5"  local_row="0" local_col="{q_spm}+{k_spm}+0" multi="{M}"   stride="{N}"  N="{s_spm}"  />
+     <stream stream_index="3" mode="rd" pattern="5"  local_row="0" local_col="24+0" multi="1"   stride="1"  N="8" />
+     <placement cord="[0, 0]"/>
+</node>
+
+<node type="bus" index="0" level="0" end_table="wrfifo.0.0_wrfifo.1.0_wrfifo.2.0_wrfifo.3.0_wrfifo.4.0_wrfifo.5.0_wrfifo.6.0_wrfifo.7.0">
+        <placement cord="[0, 0]"/>
+</node>
+</Config>
