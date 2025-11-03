@@ -1,3 +1,8 @@
+# CGRA 性能对比工具 - Python 依赖包
+# 运行时依赖
 PyQt6>=6.4.0
 matplotlib>=3.5.0
 numpy>=1.21.0
+
+# 打包依赖（仅打包时需要）
+# pyinstaller>=5.0.0

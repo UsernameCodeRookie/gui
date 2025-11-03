@@ -9,12 +9,14 @@ import sys
 import subprocess
 import stat
 from typing import Callable, Optional
+from resource_path import get_project_root, get_bin_path, get_data_path
 
-# Get the project root directory (parent of src/)
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXEC_PATH = os.path.join(PROJECT_ROOT, "bin", "CGRA_rebuild")
+
+# Get the project root directory (works in both dev and packaged environments)
+PROJECT_ROOT = get_project_root()
+EXEC_PATH = get_bin_path("CGRA_rebuild")
 # Resource directory points to data folder
-RESOURCE_DIR = os.path.join(PROJECT_ROOT, "data")
+RESOURCE_DIR = get_data_path()
 
 
 def get_executable_path():

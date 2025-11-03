@@ -41,18 +41,19 @@ matplotlib.rcParams['font.family'] = 'sans-serif'
 
 # Use CGRAValidationThread for running CGRA validation in background
 from thread import CGRAValidationThread
+from resource_path import get_resource_path, get_project_root, get_config_path
 
 
 # -------------------------------
 # Load JSON configuration files
 # -------------------------------
-# Get the project root directory (parent of src/)
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Get the project root directory (works in both dev and packaged environments)
+PROJECT_ROOT = get_project_root()
 
-with open(os.path.join(PROJECT_ROOT, "config", "architecture.json"), "r", encoding="utf-8") as f:
+with open(get_config_path("architecture.json"), "r", encoding="utf-8") as f:
     ARCH_DATA = json.load(f)
 
-with open(os.path.join(PROJECT_ROOT, "config", "operators.json"), "r", encoding="utf-8") as f:
+with open(get_config_path("operators.json"), "r", encoding="utf-8") as f:
     OP_DATA = json.load(f)
 
 
