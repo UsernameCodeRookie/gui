@@ -1,7 +1,64 @@
 import numpy as np
-import torch
-import torch.nn.functional as F
 import sys
+
+def conv2d_numpy(input_tensor, weight, bias=None, stride=1, padding=1):
+    """
+    NumPy implementation of 2D convolution
+    
+    Args:
+        input_tensor: shape (C, H, W)
+        weight: shape (K, C, I, J)
+        bias: shape (K,) or None
+        stride: stride for convolution
+        padding: padding size
+    
+    Returns:
+        output: shape (K, H_out, W_out)
+    """
+    C, H, W = input_tensor.shape
+    K, C_w, I, J = weight.shape
+    
+    assert C == C_w, f"Input channels mismatch: {C} vs {C_w}"
+    
+    # Calculate output dimensions
+    H_out = (H + 2 * padding - I) // stride + 1
+    W_out = (W + 2 * padding - J) // stride + 1
+    
+    # Pad input
+    if padding > 0:
+        padded_input = np.pad(input_tensor, ((0, 0), (padding, padding), (padding, padding)), mode='constant')
+    else:
+        padded_input = input_tensor
+    
+    # Initialize output
+    output = np.zeros((K, H_out, W_out), dtype=np.float32)
+    
+    # Perform convolution
+    for k in range(K):
+        for h in range(H_out):
+            for w in range(W_out):
+                h_start = h * stride
+                h_end = h_start + I
+                w_start = w * stride
+                w_end = w_start + J
+                
+                # Extract patch
+                patch = padded_input[:, h_start:h_end, w_start:w_end]
+                
+                # Compute convolution for this output position
+                conv_result = np.sum(patch * weight[k])
+                
+                # Add bias if provided
+                if bias is not None:
+                    conv_result += bias[k]
+                
+                output[k, h, w] = conv_result
+    
+    return output
+
+def relu_numpy(x):
+    """NumPy implementation of ReLU activation"""
+    return np.maximum(0, x)
 
 def conv(memdata_filename, golden_filename):
     # Convolution Parameters
@@ -25,30 +82,30 @@ def conv(memdata_filename, golden_filename):
     max_address = 100000
 
     # Generate random input and weight tensors
-    x = torch.randn(1, C, H, W, dtype=torch.float32)              # Input shape: NCHW
-    w = torch.randn(K, C, I, J, dtype=torch.float32)              # Weight shape: KCIJ
-    b = torch.ones(K, dtype=torch.float32) if Has_bias else None  # Optional bias
+    x = np.random.randn(1, C, H, W).astype(np.float32)              # Input shape: NCHW
+    w = np.random.randn(K, C, I, J).astype(np.float32)              # Weight shape: KCIJ
+    b = np.ones(K, dtype=np.float32) if Has_bias else None  # Optional bias
 
     # Perform 2D convolution
-    y = F.conv2d(x, w, bias=b if Has_bias else None, stride=Stride, padding=1)
+    y = conv2d_numpy(x[0], w, bias=b if Has_bias else None, stride=Stride, padding=1)
 
     # Apply activation if specified
     if SFU == "relu":
-        y = F.relu(y)
+        y = relu_numpy(y)
 
     # Remove batch dimension for memory layout
     x = x[0]  # CHW
-    y = y[0]  # KHW
+    # y is already CHW from conv2d_numpy
 
     # Flatten tensors for memory layout (row-major)
-    x_flat = x.permute(0, 1, 2).contiguous().view(-1).numpy()     # CHW → flat
-    w_flat = w.permute(0, 1, 2, 3).contiguous().view(-1).numpy()  # KCIJ → flat
-    y_flat = y.permute(0, 1, 2).contiguous().view(-1).numpy()     # KHW → flat
+    x_flat = x.transpose(0, 1, 2).reshape(-1)     # CHW → flat
+    w_flat = w.transpose(0, 1, 2, 3).reshape(-1)  # KCIJ → flat
+    y_flat = y.transpose(0, 1, 2).reshape(-1)     # KHW → flat
 
     # Flatten bias if used
     if Has_bias:
-        b_reshaped = b[:, None, None].expand(K, y.shape[1], y.shape[2])  # Broadcast to KxHxW
-        b_flat = b_reshaped.contiguous().view(-1).numpy()
+        b_reshaped = b[:, None, None] * np.ones((K, y.shape[1], y.shape[2]))  # Broadcast to KxHxW
+        b_flat = b_reshaped.reshape(-1)
     else:
         b_flat = None
 

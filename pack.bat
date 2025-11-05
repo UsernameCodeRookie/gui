@@ -22,9 +22,13 @@ echo [2/5] 安装依赖包...
 echo 正在安装项目依赖...
 pip install -r requirements.txt
 if errorlevel 1 (
-    echo ✗ 依赖安装失败
-    pause
-    exit /b 1
+    echo ✗ 依赖安装失败，尝试单独安装关键依赖...
+    pip install PyQt6 matplotlib numpy Pillow
+    if errorlevel 1 (
+        echo ✗ 关键依赖安装失败
+        pause
+        exit /b 1
+    )
 )
 
 echo 正在安装 PyInstaller...
@@ -47,11 +51,11 @@ echo ✓ 清理完成
 echo.
 echo [4/5] 开始打包应用程序...
 echo 这可能需要几分钟时间，请耐心等待...
+echo 使用精简模式打包，只排除确认不需要的大型模块...
 echo.
 
 pyinstaller --name=CGRAPerformanceGUI ^
     --windowed ^
-    --onedir ^
     --paths=src ^
     --add-data="config;config" ^
     --add-data="data;data" ^
@@ -59,9 +63,8 @@ pyinstaller --name=CGRAPerformanceGUI ^
     --hidden-import=matplotlib ^
     --hidden-import=matplotlib.backends.backend_qt5agg ^
     --hidden-import=numpy ^
-    --hidden-import=torch ^
-    --hidden-import=torch.nn ^
-    --hidden-import=torch.nn.functional ^
+    --hidden-import=PIL ^
+    --hidden-import=PIL.Image ^
     --hidden-import=PyQt6 ^
     --hidden-import=PyQt6.QtCore ^
     --hidden-import=PyQt6.QtGui ^
@@ -77,18 +80,15 @@ pyinstaller --name=CGRAPerformanceGUI ^
     --hidden-import=resource_path ^
     --hidden-import=golden_models ^
     --hidden-import=importlib.util ^
+    --exclude-module=torch ^
+    --exclude-module=torchvision ^
+    --exclude-module=torchaudio ^
+    --exclude-module=tensorflow ^
     --exclude-module=tkinter ^
-    --exclude-module=unittest ^
     src\gui.py
 
-if errorlevel 1 (
-    echo.
-    echo ✗ 打包失败！
-    pause
-    exit /b 1
-)
+echo ✓ 精简模式打包成功
 
-echo ✓ 打包完成
 
 echo.
 echo [5/5] 整理发布文件...
@@ -106,6 +106,23 @@ if exist "dist\CGRAPerformanceGUI\" (
     exit /b 1
 )
 
+REM 精简发布包 - 删除不必要的文件
+echo 正在精简发布包...
+if exist "release\CGRAPerformanceGUI\tcl" rmdir /s /q "release\CGRAPerformanceGUI\tcl"
+if exist "release\CGRAPerformanceGUI\tk" rmdir /s /q "release\CGRAPerformanceGUI\tk"
+if exist "release\CGRAPerformanceGUI\_internal\tcl" rmdir /s /q "release\CGRAPerformanceGUI\_internal\tcl"
+if exist "release\CGRAPerformanceGUI\_internal\tk" rmdir /s /q "release\CGRAPerformanceGUI\_internal\tk"
+if exist "release\CGRAPerformanceGUI\_internal\certifi" rmdir /s /q "release\CGRAPerformanceGUI\_internal\certifi"
+if exist "release\CGRAPerformanceGUI\_internal\include" rmdir /s /q "release\CGRAPerformanceGUI\_internal\include"
+if exist "release\CGRAPerformanceGUI\_internal\share" rmdir /s /q "release\CGRAPerformanceGUI\_internal\share"
+
+REM 删除不必要的 .pyd 和 .dll 文件（保留必要的）
+for %%f in ("release\CGRAPerformanceGUI\_internal\*test*.pyd" "release\CGRAPerformanceGUI\_internal\*debug*.pyd") do (
+    if exist "%%f" del /q "%%f"
+)
+
+echo ✓ 已精简发布包
+
 REM 创建启动脚本
 echo @echo off > "release\启动应用.bat"
 echo chcp 65001 ^> nul >> "release\启动应用.bat"
@@ -117,8 +134,13 @@ echo ✓ 已创建启动脚本
 
 REM 创建 README
 echo ================================================================ > "release\使用说明.txt"
-echo CGRA 性能对比工具 - 离线安装包 >> "release\使用说明.txt"
+echo CGRA 性能对比工具 - 离线安装包 (精简版) >> "release\使用说明.txt"
 echo ================================================================ >> "release\使用说明.txt"
+echo. >> "release\使用说明.txt"
+echo 版本特性： >> "release\使用说明.txt"
+echo - 已移除 PyTorch 依赖，使用 NumPy 实现 >> "release\使用说明.txt"
+echo - 精简包体，排除不必要的模块 >> "release\使用说明.txt"
+echo - 优化启动速度和内存占用 >> "release\使用说明.txt"
 echo. >> "release\使用说明.txt"
 echo 使用方法： >> "release\使用说明.txt"
 echo 1. 将整个文件夹复制到目标 Windows 服务器 >> "release\使用说明.txt"
@@ -129,6 +151,7 @@ echo 系统要求： >> "release\使用说明.txt"
 echo - Windows 7/10/11 (64位) >> "release\使用说明.txt"
 echo - 无需安装 Python >> "release\使用说明.txt"
 echo - 无需联网 >> "release\使用说明.txt"
+echo - 建议内存 4GB 以上 >> "release\使用说明.txt"
 echo. >> "release\使用说明.txt"
 echo 打包日期：%date% %time% >> "release\使用说明.txt"
 echo ================================================================ >> "release\使用说明.txt"

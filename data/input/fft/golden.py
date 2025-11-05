@@ -81,7 +81,7 @@ def fft(memdata_filename, golden_filename):
                 value = 0
             f.write(f"{value:.7f}\n")
             
-    with open(golden_file, "w") as f:
+    with open(golden_filename, "w") as f:
         for address in range(max_address):
             if 10240 <= address < 10240 + len(input_ri):
                 value = input_ri[address - 10240]

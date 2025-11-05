@@ -1,7 +1,64 @@
 import numpy as np
-import torch
-import torch.nn.functional as F
 import sys
+
+def conv2d_numpy(input_tensor, weight, bias=None, stride=1, padding=1):
+    """
+    NumPy implementation of 2D convolution
+    
+    Args:
+        input_tensor: shape (C, H, W)
+        weight: shape (K, C, I, J)
+        bias: shape (K,) or None
+        stride: stride for convolution
+        padding: padding size
+    
+    Returns:
+        output: shape (K, H_out, W_out)
+    """
+    C, H, W = input_tensor.shape
+    K, C_w, I, J = weight.shape
+    
+    assert C == C_w, f"Input channels mismatch: {C} vs {C_w}"
+    
+    # Calculate output dimensions
+    H_out = (H + 2 * padding - I) // stride + 1
+    W_out = (W + 2 * padding - J) // stride + 1
+    
+    # Pad input
+    if padding > 0:
+        padded_input = np.pad(input_tensor, ((0, 0), (padding, padding), (padding, padding)), mode='constant')
+    else:
+        padded_input = input_tensor
+    
+    # Initialize output
+    output = np.zeros((K, H_out, W_out), dtype=np.float32)
+    
+    # Perform convolution
+    for k in range(K):
+        for h in range(H_out):
+            for w in range(W_out):
+                h_start = h * stride
+                h_end = h_start + I
+                w_start = w * stride
+                w_end = w_start + J
+                
+                # Extract patch
+                patch = padded_input[:, h_start:h_end, w_start:w_end]
+                
+                # Compute convolution for this output position
+                conv_result = np.sum(patch * weight[k])
+                
+                # Add bias if provided
+                if bias is not None:
+                    conv_result += bias[k]
+                
+                output[k, h, w] = conv_result
+    
+    return output
+
+def relu_numpy(x):
+    """NumPy implementation of ReLU activation"""
+    return np.maximum(0, x)
 
 def conv(memdata_filename, golden_filename):
     # Parameters
@@ -23,35 +80,35 @@ def conv(memdata_filename, golden_filename):
     max_address = 100000
 
     # Generate random input and weight
-    # x = torch.randn(1, C, H, W, dtype=torch.float32)              # NCHW
-    # w = torch.randn(K, C, I, J, dtype=torch.float32)              # KCIJ
-    # b = torch.randn(K, dtype=torch.float32) if Has_bias else None
+    # x = np.random.randn(1, C, H, W).astype(np.float32)              # NCHW
+    # w = np.random.randn(K, C, I, J).astype(np.float32)              # KCIJ
+    # b = np.random.randn(K).astype(np.float32) if Has_bias else None
 
-    x = torch.randn(1, C, H, W, dtype=torch.float32)              # NCHW
-    w = torch.randn(K, C, I, J, dtype=torch.float32)              # KCIJ
-    b = torch.ones(K, dtype=torch.float32) if Has_bias else None
+    x = np.random.randn(1, C, H, W).astype(np.float32)              # NCHW
+    w = np.random.randn(K, C, I, J).astype(np.float32)              # KCIJ
+    b = np.ones(K, dtype=np.float32) if Has_bias else None
 
 
 
-    # Convolution (using PyTorch)
-    y = F.conv2d(x, w, bias=b if Has_bias else None, stride=Stride, padding=1)
+    # Convolution (using NumPy)
+    y = conv2d_numpy(x[0], w, bias=b if Has_bias else None, stride=Stride, padding=1)
 
     if SFU == "relu":
-        y = F.relu(y)
+        y = relu_numpy(y)
 
     # Remove batch dim for layout handling
     x = x[0]                # CHW
-    y = y[0]                # KHW
+    # y is already CHW from conv2d_numpy
 
     # Layout reshaping (explicitly match layout):
-    x_flat = x.permute(0, 1, 2).contiguous().view(-1).numpy()     # CHW
-    w_flat = w.permute(0, 1, 2, 3).contiguous().view(-1).numpy()  # KCIJ
-    y_flat = y.permute(0, 1, 2).contiguous().view(-1).numpy()     # KHW
+    x_flat = x.transpose(0, 1, 2).reshape(-1)     # CHW
+    w_flat = w.transpose(0, 1, 2, 3).reshape(-1)  # KCIJ
+    y_flat = y.transpose(0, 1, 2).reshape(-1)     # KHW
 
     if Has_bias:
         # Bias is broadcast to shape of output (K x H_out x W_out)
-        b_reshaped = b[:, None, None].expand(K, y.shape[1], y.shape[2])  # K x H x W
-        b_flat = b_reshaped.contiguous().view(-1).numpy()
+        b_reshaped = b[:, None, None] * np.ones((K, y.shape[1], y.shape[2]))  # K x H x W
+        b_flat = b_reshaped.reshape(-1)
     else:
         b_flat = None
 
