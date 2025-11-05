@@ -60,3 +60,4 @@ resource/output/
 
 release/
 *.spec
+*.zip

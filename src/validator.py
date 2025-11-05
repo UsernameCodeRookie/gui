@@ -8,8 +8,10 @@ import os
 import sys
 import subprocess
 import stat
+import importlib.util
 from typing import Callable, Optional
 from resource_path import get_project_root, get_bin_path, get_data_path
+from golden_models import init_golden_manager, get_golden_manager
 
 
 # Get the project root directory (works in both dev and packaged environments)
@@ -17,6 +19,9 @@ PROJECT_ROOT = get_project_root()
 EXEC_PATH = get_bin_path("CGRA_rebuild")
 # Resource directory points to data folder
 RESOURCE_DIR = get_data_path()
+
+# Initialize golden model manager
+_golden_manager = init_golden_manager(RESOURCE_DIR)
 
 
 def get_executable_path():
@@ -97,28 +102,134 @@ def run_golden_model(model_path: str, mem_file: str, golden_file: str,
                      stdout_callback: Optional[Callable[[str], None]] = None):
     """
     Run the golden model with the given parameters.
+    Uses the golden model manager for packaged environments.
     
-    :param model_path: Path to the golden model executable.
+    :param model_path: Path to the golden model Python file (relative to task directory).
     :param mem_file: Memory file to be used in the golden model.
     :param golden_file: Output file for golden results.
     :param stdout_callback: Optional callback function to receive output in real-time.
     :return: The result of the golden model execution.
     """
-    command = ["python", model_path, mem_file, golden_file]
+    def output(msg: str):
+        if stdout_callback:
+            stdout_callback(msg)
+        else:
+            print(msg)
+    
+    try:
+        # Extract task name from model path
+        # model_path is typically like "gemm_fp32_slice16/golden.py"
+        task_name = os.path.dirname(model_path)
+        if not task_name:
+            # If model_path is just "golden.py", try to infer from current directory
+            task_name = os.path.basename(os.getcwd())
+        
+        # Use golden model manager for execution
+        manager = get_golden_manager()
+        if manager:
+            manager.run_golden_model(task_name, mem_file, golden_file, stdout_callback)
+            return "Success"
+        else:
+            # Fallback to direct import method
+            return _run_golden_model_direct(model_path, mem_file, golden_file, stdout_callback)
+            
+    except Exception as e:
+        # Final fallback to subprocess if available
+        return _run_golden_model_subprocess(model_path, mem_file, golden_file, stdout_callback, e)
+
+
+def _run_golden_model_direct(model_path: str, mem_file: str, golden_file: str,
+                           stdout_callback: Optional[Callable[[str], None]] = None):
+    """Direct import method for running golden models."""
+    def output(msg: str):
+        if stdout_callback:
+            stdout_callback(msg)
+        else:
+            print(msg)
+    
+    # Construct full path if needed
+    if not os.path.isabs(model_path):
+        full_model_path = os.path.join(RESOURCE_DIR, "input", model_path)
+    else:
+        full_model_path = model_path
+        
+    if not os.path.exists(full_model_path):
+        raise FileNotFoundError(f"Golden model file not found: {full_model_path}")
+    
+    # Load the golden model as a module
+    spec = importlib.util.spec_from_file_location("golden_model", full_model_path)
+    golden_module = importlib.util.module_from_spec(spec)
+    
+    # Save original state
+    original_path = sys.path.copy()
+    original_argv = sys.argv.copy()
+    original_cwd = os.getcwd()
+    
+    try:
+        # Set up environment
+        model_dir = os.path.dirname(full_model_path)
+        os.chdir(model_dir)
+        
+        if model_dir not in sys.path:
+            sys.path.insert(0, model_dir)
+        
+        sys.argv = ["golden.py", mem_file, golden_file]
+        
+        # Execute the module
+        spec.loader.exec_module(golden_module)
+        
+        output(f"Golden model executed successfully via direct import")
+        return "Success"
+        
+    finally:
+        # Restore original state
+        sys.path = original_path
+        sys.argv = original_argv
+        os.chdir(original_cwd)
+
+
+def _run_golden_model_subprocess(model_path: str, mem_file: str, golden_file: str,
+                               stdout_callback: Optional[Callable[[str], None]] = None,
+                               original_error: Exception = None):
+    """Subprocess fallback method for development environments."""
+    def output(msg: str):
+        if stdout_callback:
+            stdout_callback(msg)
+        else:
+            print(msg)
+    
+    # Check if Python interpreter is available
+    try:
+        result = subprocess.run(["python", "--version"], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode != 0:
+            raise RuntimeError("Python interpreter not available")
+    except (subprocess.TimeoutExpired, FileNotFoundError, RuntimeError):
+        error_msg = (
+            "Cannot run golden model: Python interpreter not available and direct import failed. "
+            "This typically happens in packaged environments where Python is not installed. "
+        )
+        if original_error:
+            error_msg += f"Original error: {str(original_error)}"
+        raise RuntimeError(error_msg)
+    
+    # Construct full path if needed
+    if not os.path.isabs(model_path):
+        full_model_path = os.path.join(RESOURCE_DIR, "input", model_path)
+    else:
+        full_model_path = model_path
+    
+    output(f"Direct import failed, trying subprocess method...")
+    
+    # Run with subprocess
+    command = ["python", full_model_path, mem_file, golden_file]
     result = subprocess.run(command, capture_output=True, text=True)
     
     if result.returncode != 0:
         error_msg = f"Golden model execution failed: {result.stderr}"
-        if stdout_callback:
-            stdout_callback(error_msg)
         raise RuntimeError(error_msg)
     
-    msg = f"Golden model executed successfully: {result.stdout}"
-    if stdout_callback:
-        stdout_callback(msg)
-    else:
-        print(msg)
-    
+    output(f"Golden model executed successfully via subprocess: {result.stdout}")
     return result.stdout
 
 
