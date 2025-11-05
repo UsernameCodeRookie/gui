@@ -39,7 +39,7 @@ venv.bak/
 # Project specific
 output/
 logs/
-*.log
+# *.log
 
 # Keep directory structure
 !output/.gitkeep
