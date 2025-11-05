@@ -320,17 +320,31 @@ class PerfSimGUI(QMainWindow):
 
         # For non-CGRA architectures, read the existing log file (if any), cache it and display
         log_path = metrics.get("log_path", "")
-        if log_path and os.path.isfile(log_path):
-            try:
-                with open(log_path, "r", encoding="utf-8") as lf:
-                    content = lf.read()
-                # Cache and display
-                self.log_cache[key] = content
-                self.perf_log.append(content)
-            except Exception as e:
-                self.perf_log.append(f"[{arch_name}] Error reading log file: {e}\n")
+        if log_path:
+            # Handle relative paths - normalize and resolve relative to project root
+            if log_path.startswith("./"):
+                # Remove ./ prefix and resolve relative to PROJECT_ROOT
+                resolved_path = os.path.normpath(os.path.join(PROJECT_ROOT, log_path[2:]))
+            elif os.path.isabs(log_path):
+                # Already absolute path
+                resolved_path = os.path.normpath(log_path)
+            else:
+                # Relative path without ./, resolve relative to PROJECT_ROOT
+                resolved_path = os.path.normpath(os.path.join(PROJECT_ROOT, log_path))
+            
+            if os.path.isfile(resolved_path):
+                try:
+                    with open(resolved_path, "r", encoding="utf-8") as lf:
+                        content = lf.read()
+                    # Cache and display
+                    self.log_cache[key] = content
+                    self.perf_log.append(content)
+                except Exception as e:
+                    self.perf_log.append(f"[{arch_name}] Error reading log file '{resolved_path}': {e}\n")
+            else:
+                self.perf_log.append(f"[{arch_name}] Log file not found: {resolved_path}\n")
         else:
-            self.perf_log.append(f"[{arch_name}] No log file found.\n")
+            self.perf_log.append(f"[{arch_name}] No log path specified in configuration.\n")
 
     # -------------------------------
     # Create Performance Table tab
@@ -584,19 +598,33 @@ class PerfSimGUI(QMainWindow):
             key = cache_key(selected_op, selected_arch)
             metrics = perf_data[selected_arch]
             log_path = metrics.get("log_path", "")
-            if log_path and os.path.isfile(log_path):
-                try:
-                    with open(log_path, "r", encoding="utf-8") as lf:
-                        content = lf.read()
-                    self.log_cache[key] = content
-                    # Only update UI if user still viewing this operator+arch
-                    if self.operator_combo.currentText() == selected_op and self.arch_combo.currentText() == selected_arch:
-                        self.perf_log.clear()
-                        self.perf_log.append(content)
-                except Exception as e:
-                    self.perf_log.append(f"[{selected_arch}] Error reading log file: {e}\n")
+            if log_path:
+                # Handle relative paths - normalize and resolve relative to project root
+                if log_path.startswith("./"):
+                    # Remove ./ prefix and resolve relative to PROJECT_ROOT
+                    resolved_path = os.path.normpath(os.path.join(PROJECT_ROOT, log_path[2:]))
+                elif os.path.isabs(log_path):
+                    # Already absolute path
+                    resolved_path = os.path.normpath(log_path)
+                else:
+                    # Relative path without ./, resolve relative to PROJECT_ROOT
+                    resolved_path = os.path.normpath(os.path.join(PROJECT_ROOT, log_path))
+                
+                if os.path.isfile(resolved_path):
+                    try:
+                        with open(resolved_path, "r", encoding="utf-8") as lf:
+                            content = lf.read()
+                        self.log_cache[key] = content
+                        # Only update UI if user still viewing this operator+arch
+                        if self.operator_combo.currentText() == selected_op and self.arch_combo.currentText() == selected_arch:
+                            self.perf_log.clear()
+                            self.perf_log.append(content)
+                    except Exception as e:
+                        self.perf_log.append(f"[{selected_arch}] Error reading log file '{resolved_path}': {e}\n")
+                else:
+                    self.perf_log.append(f"[{selected_arch}] Log file not found: {resolved_path}\n")
             else:
-                self.perf_log.append(f"[{selected_arch}] No log file found.\n")
+                self.perf_log.append(f"[{selected_arch}] No log path specified in configuration.\n")
 
     # -------------------------------
     # Clear all runtime outputs
