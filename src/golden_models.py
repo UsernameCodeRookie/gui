@@ -58,11 +58,68 @@ class GoldenModelManager:
                 if model_dir not in sys.path:
                     sys.path.insert(0, model_dir)
                 
+                # Convert file paths to be relative to the model directory
+                # mem_file and golden_file are relative to input_dir, but we're now in model_dir
+                # So we need to go up one level to access files in input_dir
+                mem_file_relative = os.path.join("..", mem_file) if not os.path.isabs(mem_file) else mem_file
+                golden_file_relative = os.path.join("..", golden_file) if not os.path.isabs(golden_file) else golden_file
+                
                 # Set command line arguments
-                sys.argv = ["golden.py", mem_file, golden_file]
+                sys.argv = ["golden.py", mem_file_relative, golden_file_relative]
                 
                 # Execute the module
                 spec.loader.exec_module(golden_module)
+                
+                # Since __name__ is not "__main__" when using importlib, we need to manually
+                # trigger the main execution logic. Check if the module has the expected functions.
+                if hasattr(golden_module, 'gemm') and len(sys.argv) == 3:
+                    # Call the main function directly since __name__ != "__main__"
+                    golden_module.gemm(sys.argv[1], sys.argv[2])
+                elif hasattr(golden_module, 'conv') and len(sys.argv) == 3:
+                    # For conv models
+                    golden_module.conv(sys.argv[1], sys.argv[2])
+                elif hasattr(golden_module, 'fft') and len(sys.argv) == 3:
+                    # For fft models
+                    golden_module.fft(sys.argv[1], sys.argv[2])
+                else:
+                    # Try to find and call the main function dynamically
+                    # Look for functions that take exactly 2 parameters (mem_file, golden_file)
+                    import inspect
+                    for name, obj in inspect.getmembers(golden_module):
+                        if (inspect.isfunction(obj) and 
+                            len(inspect.signature(obj).parameters) == 2 and
+                            not name.startswith('_')):
+                            obj(sys.argv[1], sys.argv[2])
+                            break
+                    else:
+                        # If no suitable function found, raise an error
+                        raise RuntimeError(f"No suitable main function found in golden model for task '{task}'")
+                
+                # If the module has a main function, call it directly
+                # Otherwise, check if it defines functions we can call
+                if hasattr(golden_module, '__main__') and callable(getattr(golden_module, '__main__')):
+                    golden_module.__main__()
+                elif hasattr(golden_module, 'main') and callable(getattr(golden_module, 'main')):
+                    golden_module.main()
+                else:
+                    # Try to call a function with appropriate name
+                    # Look for functions that match the task pattern
+                    task_name_lower = task.split('_')[0].lower() if task else 'unknown'
+                    possible_names = [task_name_lower, 'run', 'execute']
+                    
+                    function_called = False
+                    for func_name in possible_names:
+                        if hasattr(golden_module, func_name) and callable(getattr(golden_module, func_name)):
+                            func = getattr(golden_module, func_name)
+                            func(mem_file_relative, golden_file_relative)
+                            function_called = True
+                            break
+                    
+                    if not function_called:
+                        # If no appropriate function found, re-execute with __name__ = "__main__"
+                        # This is a fallback that should work for most cases
+                        exec(spec.loader.get_data(golden_path).decode('utf-8'), 
+                             {'__name__': '__main__', '__file__': golden_path})
                 
                 output(f"Golden model '{task}' executed successfully")
                 
